@@ -2,13 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GRIP // SYSTEM_ACCESS</title>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400&display=swap');
-        
-        /* Global box-sizing fix to prevent horizontal scrolling */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --c-bg: #050505;
+            --c-surface: #111;
+            --c-accent: #ccff00; /* The signature Acid Green */
+            --c-text: #fff;
+            --c-text-dim: #888;
+            --c-error: #ff2a2a;
+            
+            --border-width: 2px;
+        }
+
         * {
             box-sizing: border-box;
         }
@@ -20,95 +30,257 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background-color: #000;
-            color: #fff;
+            min-height: 100dvh; /* Mobile browser friendly */
+            background-color: var(--c-bg);
+            color: var(--c-text);
+            overflow-x: hidden;
             position: relative;
         }
-        
-        /* ✅ Local background (replace bg.jpg with your own file) */
-        body::before {
-            content: '';
-            position: absolute;
+
+        /* --- VISUAL FX LAYERS --- */
+        .bg-noise {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('loginbg.png') no-repeat center center fixed;
-            background-size: cover;
-            opacity: 0.5;
+            pointer-events: none;
             z-index: -1;
+            /* Static noise texture */
+            background-image: 
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            opacity: 0.6;
+        }
+        
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background: 
+                linear-gradient(transparent 0%, var(--c-surface) 1%, transparent 2%) 0 0 / 50px 50px,
+                linear-gradient(90deg, transparent 0%, var(--c-surface) 1%, transparent 2%) 0 0 / 50px 50px;
+            transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+            opacity: 0.3;
+            animation: gridMove 20s linear infinite;
+            z-index: -2;
         }
 
-        .login-container {
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 3.5rem;
-            border: 1px solid #fff;
-            border-radius: 5px;
-            text-align: center;
+        @keyframes gridMove {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(50px) translateZ(-200px); }
+        }
+
+        /* --- MAIN CONTAINER --- */
+        .login-wrapper {
             position: relative;
-            z-index: 1;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
             width: 90%;
-            max-width: 450px;
+            max-width: 420px;
+            padding: 2.5rem;
+            
+            background: rgba(10, 10, 10, 0.95);
+            border: var(--border-width) solid var(--c-surface);
+            box-shadow: 15px 15px 0px rgba(0,0,0,0.5); /* Heavy block shadow */
+            
+            /* The aggressive ZZZ geometry */
+            clip-path: polygon(
+                20px 0, 100% 0, 
+                100% calc(100% - 20px), calc(100% - 20px) 100%, 
+                0 100%, 0 20px
+            );
+            
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        /* Interactive Corner Accents */
+        .login-wrapper::before, .login-wrapper::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--c-accent);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
         }
 
+        .login-wrapper::before {
+            top: 0;
+            left: 0;
+            border-bottom: none;
+            border-right: none;
+        }
+
+        .login-wrapper::after {
+            bottom: 0;
+            right: 0;
+            border-top: none;
+            border-left: none;
+        }
+
+        .login-wrapper:hover::before,
+        .login-wrapper:hover::after {
+            width: 90px;
+            height: 90px;
+            opacity: 1;
+        }
+
+        /* --- TYPOGRAPHY --- */
         .logo {
-            font-size: 3.8rem;
-            margin-bottom: 2.8rem;
+            font-size: clamp(2.5rem, 6vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: -3px;
+            color: var(--c-text);
+            line-height: 1;
+        }
+
+        .logo span {
+            color: var(--c-accent);
+        }
+
+        .logo-sub {
+            display: block;
+            font-size: 0.85rem;
+            letter-spacing: 4px;
+            color: var(--c-text-dim);
+            margin-bottom: 2.5rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            border-bottom: 1px solid #222;
+            padding-bottom: 10px;
+        }
+
+        /* --- INPUTS --- */
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
         }
 
         input {
-            display: block;
             width: 100%;
-            padding: 1.5rem;
-            margin-bottom: 1.8rem;
-            background: transparent;
-            border: 1px solid #fff;
-            color: #fff;
-            font-size: 1.6rem;
+            padding: 1.2rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #333;
+            color: var(--c-text);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            outline: none;
             transition: all 0.3s ease;
         }
-        
+
         input:focus {
-            outline: none;
-            box-shadow: 0 0 5px #fff;
+            background: rgba(204, 255, 0, 0.05);
+            border-color: var(--c-accent);
+            padding-left: 1.8rem; /* Slide effect */
+            box-shadow: -5px 0 0 var(--c-accent); /* Left accent bar on focus */
         }
 
         input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
+            color: #555;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        
+        .input-deco {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            color: var(--c-accent);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
         }
 
+        input:focus + .input-deco {
+            opacity: 1;
+            transform: translateY(-50%) translateX(-5px);
+        }
+
+        /* --- BUTTONS --- */
         button {
             width: 100%;
-            padding: 1.7rem;
-            background: transparent;
-            border: 1px solid #fff;
-            color: #fff;
-            font-size: 1.7rem;
+            padding: 1.3rem;
+            margin-top: 1rem;
+            background: var(--c-text);
+            color: #000;
+            border: none;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-transform: uppercase;
             cursor: pointer;
-            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.15s ease;
+            /* Angled button shape */
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
         }
 
         button:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+            background: var(--c-accent);
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 rgba(255,255,255,0.1);
         }
 
+        button:active {
+            transform: translate(0, 0);
+            box-shadow: none;
+        }
+        
+        button:disabled {
+            background: #222;
+            color: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* --- LINKS --- */
+        .signup-link {
+            margin-top: 2rem;
+            color: var(--c-text-dim);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .signup-link a {
+            color: var(--c-text);
+            text-decoration: none;
+            border-bottom: 2px solid var(--c-accent);
+            font-weight: 700;
+            transition: background 0.3s;
+        }
+
+        .signup-link a:hover {
+            background: var(--c-accent);
+            color: #000;
+        }
+
+        /* --- MESSAGES --- */
         #message-box {
-            position: relative;
             display: none;
             width: 100%;
             padding: 1rem;
             margin-bottom: 1.5rem;
-            background-color: #f44336;
-            color: white;
-            border-radius: 5px;
-            text-align: center;
-            font-size: 1.1rem;
-            animation: fadeInDown 0.5s ease-out;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); 
+            background: rgba(255, 42, 42, 0.08);
+            border-left: 4px solid var(--c-error);
+            color: var(--c-error);
+            font-size: 0.9rem;
+            font-weight: 700;
+            position: relative;
+            animation: glitchEntry 0.2s steps(2);
+        }
+
+        #message-box.success {
+            border-left-color: var(--c-accent);
+            color: var(--c-accent);
+            background: rgba(204, 255, 0, 0.08);
         }
         
         #message-box.visible {
@@ -117,66 +289,76 @@
 
         .close-btn {
             position: absolute;
-            top: 5px;
+            top: 10px;
             right: 10px;
-            font-size: 1.5rem;
-            color: white;
             cursor: pointer;
+            font-size: 1.2rem;
+            line-height: 0.5;
         }
 
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes glitchEntry {
+            0% { transform: translate(-10px, 0) skew(10deg); opacity: 0; }
+            20% { transform: translate(10px, 0) skew(-10deg); opacity: 1; }
+            40% { transform: translate(-5px, 0) skew(5deg); }
+            60% { transform: translate(5px, 0) skew(-5deg); }
+            100% { transform: translate(0, 0) skew(0); }
         }
 
-        /* --- MOBILE OPTIMIZATION --- */
+        /* --- RESPONSIVE --- */
         @media (max-width: 600px) {
-            .login-container {
-                padding: 2rem; /* Reduced padding for smaller screens */
-                width: 95%; 
+            .login-wrapper {
+                width: 94%;
+                padding: 1.5rem;
+                box-shadow: none;
+                border-width: 1px;
             }
+            
+            .bg-grid { display: none; } /* Performance */
 
-            .logo {
-                font-size: 2.5rem; /* Smaller logo */
-                margin-bottom: 2rem;
-            }
-
-            input {
-                padding: 1rem; /* Smaller touch targets */
-                margin-bottom: 1.2rem;
-                font-size: 1.1rem; /* Prevent zoom on iOS */
-            }
-
-            button {
-                padding: 1.2rem;
-                font-size: 1.2rem;
-            }
+            .logo { font-size: 2.8rem; }
+        }
+        
+        /* Ultra-wide support */
+        @media (min-width: 1600px) {
+            body { font-size: 18px; }
+            .login-wrapper { max-width: 500px; }
         }
     </style>
-        <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
     <link rel="manifest" href="/favicon/site.webmanifest">
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo">Ψushi.in</div>
+
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+
+    <div class="login-wrapper">
+        <div class="logo">GRIP<span>.sys</span></div>
+        <div class="logo-sub">Neural_Interface // V.3.1</div>
+        
         <div id="message-box">
-            <span class="close-btn">&times;</span>
             <span id="message-text"></span>
+            <span class="close-btn">&times;</span>
         </div>
+
         <form id="login-form">
-            <input type="email" id="email-input" placeholder="Email" required>
-            <input type="password" id="password-input" placeholder="Password" required>
-            <button type="submit" id="login-button">Login</button>
+            <div class="input-group">
+                <input type="email" id="email-input" placeholder="User // ID" required autocomplete="email">
+                <div class="input-deco">●</div>
+            </div>
+            
+            <div class="input-group">
+                <input type="password" id="password-input" placeholder="Pass // Key" required autocomplete="current-password">
+                <div class="input-deco">●</div>
+            </div>
+
+            <button type="submit" id="login-button">Initialize</button>
         </form>
-        <p class="signup-link">Don't have an account? <a href="contact.html">Get Access Now</a></p>
+
+        <p class="signup-link">No Credentials? <a href="contact.html">Request Access</a></p>
     </div>
     
     <!-- Firebase SDKs -->
@@ -199,7 +381,10 @@
         
         function showMessage(message, isError = true) {
             messageText.textContent = message;
-            messageBox.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
+            messageBox.classList.remove('success');
+            if (!isError) {
+                messageBox.classList.add('success');
+            }
             messageBox.classList.add('visible');
         }
 
@@ -209,12 +394,18 @@
         }
 
         closeBtn.addEventListener('click', clearMessage);
-        loginForm.addEventListener('input', clearMessage);
+        
+        loginForm.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', clearMessage);
+        });
 
         auth.onAuthStateChanged((user) => {
             if (user) {
-                // ✅ Show success before redirect
-                showMessage("Based. Logging you in 🚀", false);
+                loginButton.innerHTML = "ACCESS GRANTED";
+                loginButton.style.background = "#ccff00";
+                loginButton.style.color = "#000";
+                
+                showMessage("System Link Established. Redirecting...", false);
                 setTimeout(() => {
                     window.location.href = "chat.html";
                 }, 800);
@@ -229,29 +420,33 @@
             const password = document.getElementById('password-input').value;
 
             loginButton.disabled = true;
-            loginButton.textContent = 'Logging in...';
+            loginButton.innerHTML = 'SYNCING...';
 
             auth.signInWithEmailAndPassword(email, password)
                 .catch((error) => {
-                    let errorMessage = "Something went wrong, bro. Try again.";
+                    let errorMessage = "Connection Failure.";
                     switch (error.code) {
                         case 'auth/wrong-password':
-                            errorMessage = 'Bro… that password is more wrong than pineapple on pizza. 🍍';
+                            errorMessage = 'Key Mismatch (Wrong Password).';
                             break;
                         case 'auth/user-not-found':
-                            errorMessage = 'No account found, chief. Did you typo or just manifest a fake email? 🤔';
+                            errorMessage = 'Identity Unknown (User Not Found).';
                             break;
                         case 'auth/invalid-email':
-                            errorMessage = 'That email looks sus. Try again. 🕵️‍♂️';
+                            errorMessage = 'Invalid Syntax (Bad Email Format).';
                             break;
-
+                        case 'auth/too-many-requests':
+                            errorMessage = 'Traffic Overload. Standby.';
+                            break;
                     }
                     showMessage(errorMessage);
                     console.error("Login error:", error.code, errorMessage);
                 })
                 .finally(() => {
-                    loginButton.disabled = false;
-                    loginButton.textContent = 'Login';
+                    if (!auth.currentUser) {
+                        loginButton.disabled = false;
+                        loginButton.innerHTML = 'Initialize';
+                    }
                 });
         });
     </script>
