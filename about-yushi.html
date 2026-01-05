@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Team</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            color: #374151; /* Dark gray text */
+        }
+    </style>
+ <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/favicon/site.webmanifest">
+</head>
+<body class="bg-gray-100">
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-4 md:p-8 lg:p-12">
+        
+        <!-- Header Section -->
+        <header class="text-center py-10 md:py-16">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">Yushi.in</h1>
+            <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+                Created, Tested and Managed by the students of class <b>9F</b>
+            </p>
+        </header>
+
+        <!-- Main Content Section -->
+        <main class="grid grid-cols-1 gap-10 lg:gap-16">
+
+            <!-- Story, Contributions, and Techs Section -->
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+                
+                <!-- The Story Behind Its Existence -->
+                <section class="mb-8">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">The Story Behind It</h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        <!-- Add your team's origin story here -->
+                        So about this project i got this idea a few weeks later after my friend left our school and went to Karnataka and joined a military school. So well he did told me we will meet in winter vacation which is a long time for sure means he during summer vacation. So as he is there their is no option to talk to him means he is total cutoff from the outer world means not that much also means he could talk to family using phone they gave means but limited for sure okay and a computer lab with internet. Now he can talk to us with the internet in the computer lab but the things is in order to talk with us he would need a phone number to login whatsapp, telegram or any other platform . He could use instagram but let's be honest instagram could be blocked in the military school or it might not a good idea to use it their. Now after that only I got this idea why not I make a platform for my friends only to talk. In this only us no risk just login credentials I give him and start taking. Simple. So from that day I started to build it. Well the initial plan was just to make a normal chatting app for few of my friends but as i started to build it i thought I should make it for atleast 1000 users. So now here is what I deliver to you
+                        </p>
+                </section>
+
+                <!-- Contributions Section -->
+                <section class="mb-8">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">Our Contributions</h2>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700 leading-relaxed">
+                        <!-- List your team's key contributions -->
+                        <li>**Lead Design:** Crafted the user interface and experience from the ground up, ensuring a seamless and intuitive product.</li>
+                        <li>**Core Development:** Built the robust backend architecture and APIs that power the application.</li>
+                        <li>**Frontend Engineering:** Developed the responsive and interactive client-side application.</li>
+                        <li>**Quality Assurance:** Implemented extensive testing protocols to ensure a stable and reliable product.</li>
+                    </ul>
+                </section>
+
+                <!-- Technologies Involved -->
+                <section>
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">Technologies Involved</h2>
+                    <div class="flex flex-wrap gap-2">
+                        <!-- Add a list of your technologies. You can use badges for a nice visual effect. -->
+                        <span class="bg-blue-200 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">React</span>
+                        <span class="bg-blue-200 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">Node.js</span>
+                        <span class="bg-blue-200 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">Express</span>
+                        <span class="bg-green-200 text-green-800 text-sm font-medium px-3 py-1 rounded-full">MongoDB</span>
+                        <span class="bg-purple-200 text-purple-800 text-sm font-medium px-3 py-1 rounded-full">Tailwind CSS</span>
+                        <span class="bg-yellow-200 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">JavaScript</span>
+                    </div>
+                </section>
+
+            </div>
+            
+        </main>
+        
+        <!-- Project Gallery Section -->
+        <section class="py-12 md:py-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-8">Project Gallery</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                <!-- 
+                    FORMAT FOR ADDING A NEW IMAGE
+                    
+                    - Copy and paste the entire block below to add a new image.
+                    - Change the 'src' path to your local image file.
+                    - Change the heading text and the description text.
+                    - The 'onclick' attribute now opens a modal for a larger view.
+                -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="bg-gray-200 overflow-hidden">
+                        <!-- Replace the 'src' value with your image path (e.g., "images/my-project-1.jpg") -->
+                        <img src="images-projectScreenshot/render.png" 
+                             alt="Description of the project image"
+                             class="w-full h-auto object-cover cursor-pointer hover:scale-105 transition-transform duration-200"
+                             onclick="openModal(this.src)">
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Image Heading Here</h3>
+                        <p class="text-gray-600">
+                            A short description of the image, explaining its significance to the project or team.
+                        </p>
+                    </div>
+                </div>
+                <!-- You can add more image blocks by copying the above div -->
+
+            </div>
+        </section>
+
+        <!-- The Modal/Lightbox for enlarged images -->
+        <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 hidden" onclick="closeModal()">
+            <div class="relative max-w-4xl max-h-full">
+                <img id="modalImage" src="" alt="Enlarged view" class="max-w-full max-h-full rounded-xl shadow-2xl" onclick="event.stopPropagation()">
+                <button class="absolute top-4 right-4 text-white text-3xl font-bold p-2 leading-none" onclick="closeModal()">
+                    &times;
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center py-8 mt-12 border-t border-gray-300">
+            <p class="text-sm text-gray-500">&copy; 2025 Your Team Name. All rights reserved.</p>
+        </footer>
+
+    </div>
+
+    <!-- JavaScript for the modal functionality -->
+    <script>
+        const imageModal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+
+        function openModal(imageSrc) {
+            modalImage.src = imageSrc;
+            imageModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            imageModal.classList.add('hidden');
+        }
+    </script>
+
+</body>
+</html>
+

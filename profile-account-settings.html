@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Chat App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Base body styles, now handled by Tailwind classes */
+        body {
+            font-family: "Inter", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        /* Dark mode scrollbar track */
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: #4a4a4a; /* Darker background for dark mode */
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        /* Dark mode scrollbar thumb */
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #bbb; /* Lighter thumb for dark mode */
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Dark mode scrollbar thumb hover */
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        /* Style for the custom file input button */
+        .file-upload-label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #388E3C;
+        }
+        .file-upload-label:hover {
+            background-color: #43A047;
+            transform: translateY(-1px);
+        }
+        .file-upload-label:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .file-upload-label input[type="file"] {
+            display: none;
+        }
+        /* Dark mode for file upload label */
+        .dark .file-upload-label {
+            background-color: #388E3C; /* Slightly darker green */
+            border-color: #2E7D32;
+        }
+        .dark .file-upload-label:hover {
+            background-color: #2E7D32;
+        }
+        
+        /* New class for the disabled button */
+        .file-upload-label-disabled {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            background-color: #9CA3AF; /* Gray color for disabled state */
+            color: white;
+            border-radius: 0.5rem;
+            cursor: not-allowed;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #6B7280;
+        }
+        /* Dark mode for disabled file upload label */
+        .dark .file-upload-label-disabled {
+            background-color: #555; /* Darker gray */
+            border-color: #444;
+        }
+
+        /* For the aspect ratio preview */
+        .aspect-ratio-preview {
+            width: 150px;
+            height: 150px;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            /* Border and background now handled by Tailwind classes */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            object-fit: cover;
+        }
+        .aspect-ratio-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Save confirmation message style */
+        .save-confirmation {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            /* Background and text color handled by JS, so no change here directly */
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 1000;
+        }
+        .save-confirmation.show {
+            opacity: 1;
+        }
+
+        /* Styles for the image adjustment modal/section */
+        .image-adjustment-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        /* Dark mode for modal overlay (already dark) */
+        .dark .image-adjustment-modal {
+            background-color: rgba(0, 0, 0, 0.85);
+        }
+
+        .image-adjustment-content {
+            /* Background now handled by Tailwind classes */
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        canvas {
+            border: 2px solid #60A5FA;
+            border-radius: 0.75rem; /* Match preview border-radius */
+            display: block;
+            margin: 0 auto;
+            /* Background now handled by Tailwind classes */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .adjustment-controls {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+    </style>
+     <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/favicon/site.webmanifest">
+</head>
+<body class="p-4 bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+    <div class="w-full max-w-2xl bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+        <!-- Header with Back Button and Logout Button -->
+        <div class="flex items-center justify-between p-4 bg-green-500 text-white rounded-t-lg shadow-md">
+            <button id="back-to-chat-btn" class="flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-green-600 transition-colors">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                <span class="font-semibold">Back to Chat</span>
+            </button>
+            <h1 id="settings-title" class="text-xl font-bold">Account & Profile Settings</h1>
+            <button id="logout-btn" class="flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-green-600 transition-colors">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+                <span class="font-semibold">Logout</span>
+            </button>
+        </div>
+
+        <!-- Main Content Area - Combined Profile and Account Settings -->
+        <div id="settings-section" class="p-6 space-y-8 custom-scrollbar h-[calc(100vh-150px)] overflow-y-auto">
+
+            <!-- Profile Settings Section -->
+            <div class="space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 border-b pb-2 mb-4 dark:border-gray-700">Your Profile</h2>
+
+                <!-- Profile Picture Section -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2 dark:text-gray-300">Profile Picture</label>
+                    <div class="flex items-center space-x-4">
+                        <div class="aspect-ratio-preview border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+                            <img id="profile-pic-preview" src="https://placehold.co/150x150/9CA3AF/FFFFFF?text=No+Photo" alt="Profile Picture">
+                        </div>
+                        <label for="profile-photo-input" class="file-upload-label flex-grow">
+                            <i data-lucide="upload-cloud" class="w-5 h-5 mr-2"></i>
+                            Select Photo
+                            <input type="file" id="profile-photo-input" accept="image/*" class="hidden">
+                        </label>
+                        <button id="delete-photo-btn" class="bg-red-500 text-white p-3 rounded-lg shadow-md hover:bg-red-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 dark:text-gray-400">Select an image to set or update your profile picture. Max size 2MB.</p>
+                </div>
+
+                <!-- Email Address (Non-editable) -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2 dark:text-gray-300">Email Address</label>
+                    <input type="email" id="profile-email" autocomplete="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600" value="" readonly>
+                </div>
+
+                <!-- Name (Locked) -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2 dark:text-gray-300">Name</label>
+                    <input type="text" id="profile-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600" value="" readonly>
+                    <p class="text-xs text-gray-500 mt-1 dark:text-gray-400">Your name is locked and cannot be changed.</p>
+                </div>
+
+                <!-- Username -->
+                <div>
+                    <label for="profile-username" class="block text-gray-700 text-sm font-semibold mb-2 dark:text-gray-300">Nickname</label>
+                    <input type="text" id="profile-username" autocomplete="off" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" placeholder="Enter your nickname">
+                </div>
+
+                <!-- Hobbies -->
+                <div>
+                    <label for="profile-hobbies" class="block text-gray-700 text-sm font-semibold mb-2 dark:text-gray-300">Hobbies</label>
+                    <textarea id="profile-hobbies" autocomplete="off" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" placeholder="List your hobbies (e.g., Reading, Hiking, Gaming)"></textarea>
+                </div>
+
+                <!-- Bio -->
+                <div>
+                    <label for="profile-bio" class="block text-gray-700 text-sm font-semibold mb-2 dark:text-gray-300">Bio (Max 160 characters)</label>
+                    <textarea id="profile-bio" autocomplete="off" rows="3" maxlength="160" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" placeholder="Tell us a little about yourself..."></textarea>
+                    <p id="bio-char-count" class="text-xs text-gray-500 mt-1 text-right dark:text-gray-400">0/160 characters</p>
+                </div>
+
+                <!-- Save Profile Button -->
+                <button id="save-profile-btn" class="w-full bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors shadow-md">
+                    Save Profile Changes
+                </button>
+            </div>
+
+            <!-- Password Management Section -->
+            <div class="space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 border-b pb-2 mb-4 dark:border-gray-700">Password Management</h2>
+
+                <!-- Current Password -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2 dark:text-gray-300">Current Password</label>
+                    <input type="password" id="current-password" autocomplete="off" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" placeholder="Enter your current password">
+                </div>
+
+                <!-- New Password -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2 dark:text-gray-300">New Password</label>
+                    <input type="password" id="new-password" autocomplete="new-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" placeholder="Enter a new password">
+                </div>
+
+                <!-- Confirm New Password -->
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2 dark:text-gray-300">Confirm New Password</label>
+                    <input type="password" id="confirm-new-password" autocomplete="new-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600" placeholder="Confirm your new password">
+                </div>
+
+                <!-- Save Password Button -->
+                <button id="save-password-btn" class="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors shadow-md">
+                    Save New Password
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Adjustment Modal -->
+    <div id="image-adjustment-modal" class="image-adjustment-modal hidden">
+        <div class="image-adjustment-content bg-white dark:bg-gray-800">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center dark:text-gray-200">Adjust Your Photo</h3>
+            <div class="mb-4 flex justify-center">
+                <canvas id="image-editor-canvas" width="300" height="300" class="bg-gray-50 dark:bg-gray-700"></canvas>
+            </div>
+            <div class="adjustment-controls">
+                <button id="rotate-left-btn" class="bg-gray-200 text-gray-700 p-2 rounded-lg flex items-center gap-1 hover:bg-gray-300 transition-colors dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Rotate
+                </button>
+                <input type="range" id="zoom-slider" min="0.5" max="3" step="0.01" value="1" class="w-1/3">
+                <button id="reset-transform-btn" class="bg-gray-200 text-gray-700 p-2 rounded-lg flex items-center gap-1 hover:bg-gray-300 transition-colors dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i> Reset
+                </button>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6">
+                <button id="cancel-adjust-btn" class="px-5 py-2 bg-gray-300 text-gray-800 rounded-lg font-semibold hover:bg-gray-400 transition-colors dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">Cancel</button>
+                <button id="crop-upload-btn" class="px-5 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed">
+                    <i data-lucide="crop" class="w-5 h-5 inline-block mr-2"></i> Crop & Upload
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Confirmation Message -->
+    <div id="save-confirmation-msg" class="save-confirmation">
+        Profile Saved!
+    </div>
+
+    <!-- Lucide Icons CDN (moved to end of body for reliability) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script type="module">
+        // --- Dark Mode System Theme Detection ---
+        function applySystemTheme() {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        applySystemTheme();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
+
+        // --- Firebase & Supabase Imports ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+        // --- Firebase Initialization (Auth & Firestore only) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyADtCEmADN8ueIwBb91mohYv5eiL9plgz0",
+            authDomain: "yushi-login.firebaseapp.com",
+            projectId: "yushi-login",
+            messagingSenderId: "75893637403",
+            appId: "1:75893637403:web:9f8fd7954714ecf01f13be",
+            measurementId: "G-58ZDG54Z4P"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Supabase Initialization (Storage only) ---
+        const SUPABASE_URL = 'https://ycyvgpqhqohbkraccnlu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljeXZncHFocW9oYmtyYWNjbmx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNDU5MjEsImV4cCI6MjA3MDgyMTkyMX0.aa5BAWMnB0yNZcSyrF5k3y7wxlzlJ3JUMxJf4KbiL9I';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const PROFILE_PHOTOS_BUCKET = 'yushi-profile';
+
+        let currentUser;
+        // Global variables for image adjustment
+        let imageToAdjust = new Image();
+        let currentRotation = 0;
+        let currentScale = 1;
+        let currentPosition = { x: 0, y: 0 };
+        let isDragging = false;
+        let lastPointerPosition = { x: 0, y: 0 };
+
+        // --- DOM Elements ---
+        const backToChatBtn = document.getElementById('back-to-chat-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const saveConfirmationMsg = document.getElementById('save-confirmation-msg');
+        const profilePicPreview = document.getElementById('profile-pic-preview');
+        const profileEmail = document.getElementById('profile-email');
+        const profileName = document.getElementById('profile-name');
+        const profileUsername = document.getElementById('profile-username');
+        const profileHobbies = document.getElementById('profile-hobbies');
+        const profileBio = document.getElementById('profile-bio');
+        const bioCharCount = document.getElementById('bio-char-count');
+        const saveProfileBtn = document.getElementById('save-profile-btn');
+        const currentPasswordInput = document.getElementById('current-password');
+        const newPasswordInput = document.getElementById('new-password'); 
+        const confirmNewPasswordInput = document.getElementById('confirm-new-password');
+        const savePasswordBtn = document.getElementById('save-password-btn');
+        const profilePhotoInput = document.getElementById('profile-photo-input');
+        const deletePhotoBtn = document.getElementById('delete-photo-btn');
+        const imageAdjustmentModal = document.getElementById('image-adjustment-modal');
+        const imageEditorCanvas = document.getElementById('image-editor-canvas');
+        const rotateLeftBtn = document.getElementById('rotate-left-btn');
+        const zoomSlider = document.getElementById('zoom-slider');
+        const resetTransformBtn = document.getElementById('reset-transform-btn');
+        const cancelAdjustBtn = document.getElementById('cancel-adjust-btn');
+        const cropUploadBtn = document.getElementById('crop-upload-btn');
+        const ctx = imageEditorCanvas.getContext('2d');
+        const CANVAS_SIZE = 300;
+        const MAX_UPLOAD_SIZE = 2 * 1024 * 1024; // 2MB
+
+        // --- Utility Functions ---
+        function updateBioCharCount() {
+            const currentLength = profileBio.value.length;
+            bioCharCount.textContent = `${currentLength}/160 characters`;
+            bioCharCount.classList.toggle('text-red-500', currentLength >= 160);
+        }
+
+        function showSaveConfirmation(message, isError = false) {
+            saveConfirmationMsg.textContent = message;
+            saveConfirmationMsg.style.backgroundColor = isError ? '#dc3545' : '#28a745';
+            saveConfirmationMsg.classList.add('show');
+            setTimeout(() => saveConfirmationMsg.classList.remove('show'), 3000);
+        }
+
+        // --- Image Drawing and Adjustment Functions ---
+        function drawImageOnCanvas() {
+            ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            ctx.save();
+            ctx.translate(CANVAS_SIZE / 2, CANVAS_SIZE / 2);
+            ctx.rotate(currentRotation * Math.PI / 180);
+            ctx.scale(currentScale, currentScale);
+            ctx.translate(-imageToAdjust.width / 2 + currentPosition.x, -imageToAdjust.height / 2 + currentPosition.y);
+            ctx.drawImage(imageToAdjust, 0, 0, imageToAdjust.width, imageToAdjust.height);
+            ctx.restore();
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.beginPath();
+            ctx.arc(CANVAS_SIZE / 2, CANVAS_SIZE / 2, CANVAS_SIZE / 2 - 2, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.beginPath();
+            ctx.arc(CANVAS_SIZE / 2, CANVAS_SIZE / 2, CANVAS_SIZE / 2 - 2, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#60A5FA';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+
+        function resetImageTransform() {
+            currentRotation = 0;
+            currentScale = 1;
+            currentPosition = { x: 0, y: 0 };
+            zoomSlider.value = 1;
+            drawImageOnCanvas();
+        }
+
+        function handlePointerDown(e) {
+            isDragging = true;
+            const pos = e.touches ? e.touches[0] : e;
+            lastPointerPosition = { x: pos.clientX, y: pos.clientY };
+            imageEditorCanvas.style.cursor = 'grabbing';
+        }
+
+        function handlePointerMove(e) {
+            if (!isDragging) return;
+            const pos = e.touches ? e.touches[0] : e;
+            const dx = pos.clientX - lastPointerPosition.x;
+            const dy = pos.clientY - lastPointerPosition.y;
+            currentPosition.x += dx / currentScale;
+            currentPosition.y += dy / currentScale;
+            lastPointerPosition = { x: pos.clientX, y: pos.clientY };
+            drawImageOnCanvas();
+        }
+
+        function handlePointerUp() {
+            isDragging = false;
+            imageEditorCanvas.style.cursor = 'grab';
+        }
+
+        // --- Photo Upload/Delete Logic ---
+        profilePhotoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > MAX_UPLOAD_SIZE) {
+                showSaveConfirmation('File size exceeds 2MB limit.', true);
+                profilePhotoInput.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                imageToAdjust.onload = () => {
+                    imageEditorCanvas.width = CANVAS_SIZE;
+                    imageEditorCanvas.height = CANVAS_SIZE;
+                    resetImageTransform();
+                    drawImageOnCanvas();
+                    imageAdjustmentModal.classList.remove('hidden');
+                    lucide.createIcons();
+                };
+                imageToAdjust.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        cancelAdjustBtn.addEventListener('click', () => {
+            imageAdjustmentModal.classList.add('hidden');
+            profilePhotoInput.value = '';
+            imageToAdjust = new Image();
+        });
+
+        rotateLeftBtn.addEventListener('click', () => {
+            currentRotation = (currentRotation - 90) % 360;
+            drawImageOnCanvas();
+        });
+
+        zoomSlider.addEventListener('input', (e) => {
+            currentScale = parseFloat(e.target.value);
+            drawImageOnCanvas();
+        });
+
+        resetTransformBtn.addEventListener('click', resetImageTransform);
+
+        imageEditorCanvas.addEventListener('mousedown', handlePointerDown);
+        imageEditorCanvas.addEventListener('mousemove', handlePointerMove);
+        imageEditorCanvas.addEventListener('mouseup', handlePointerUp);
+        imageEditorCanvas.addEventListener('mouseleave', handlePointerUp);
+        imageEditorCanvas.addEventListener('touchstart', handlePointerDown, { passive: true });
+        imageEditorCanvas.addEventListener('touchmove', handlePointerMove, { passive: true });
+        imageEditorCanvas.addEventListener('touchend', handlePointerUp);
+
+        cropUploadBtn.addEventListener('click', async () => {
+            if (!currentUser) return showSaveConfirmation('You must be logged in.', true);
+
+            // ⭐ CAPTURE OLD PHOTO URL before starting the upload process
+            const oldPhotoURL = profilePicPreview.src.includes('placehold.co') ? null : profilePicPreview.src;
+
+            cropUploadBtn.disabled = true;
+            cropUploadBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 inline-block mr-2 animate-spin"></i> Uploading...';
+            lucide.createIcons();
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = tempCanvas.height = 300;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.save();
+            tempCtx.translate(150, 150);
+            tempCtx.rotate(currentRotation * Math.PI / 180);
+            tempCtx.scale(currentScale, currentScale);
+            tempCtx.translate(-imageToAdjust.width / 2 + currentPosition.x, -imageToAdjust.height / 2 + currentPosition.y);
+            tempCtx.drawImage(imageToAdjust, 0, 0);
+            tempCtx.restore();
+            tempCtx.globalCompositeOperation = 'destination-in';
+            tempCtx.beginPath();
+            tempCtx.arc(150, 150, 150, 0, 2 * Math.PI);
+            tempCtx.fill();
+            tempCtx.globalCompositeOperation = 'source-over';
+
+            tempCanvas.toBlob(async (blob) => {
+                if (!blob) {
+                    showSaveConfirmation('Failed to crop image.', true);
+                    cropUploadBtn.disabled = false;
+                    cropUploadBtn.innerHTML = '<i data-lucide="crop" class="w-5 h-5 inline-block mr-2"></i> Crop & Upload';
+                    lucide.createIcons();
+                    return;
+                }
+
+                try {
+                    const firebaseToken = await currentUser.getIdToken();
+                    const newFileName = `profile_${currentUser.uid}_${Date.now()}.png`;
+
+                    // 1. Ask Edge Function for a signed upload URL for the NEW photo
+                    const { data: urlData, error: urlError } = await supabase.functions.invoke('storage-auth', {
+                        body: { action: 'upload', fileName: newFileName },
+                        headers: { 'Authorization': `Bearer ${firebaseToken}` }
+                    });
+                    if (urlError) throw urlError;
+
+                    // 2. Upload the NEW photo using the signed URL
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from(PROFILE_PHOTOS_BUCKET)
+                        .uploadToSignedUrl(urlData.path, urlData.token, blob, {
+                            contentType: 'image/png'
+                        });
+                    if (uploadError) throw uploadError;
+
+                    // 3. Get the public URL and update Firestore
+                    const { data: publicUrlData } = supabase.storage
+                        .from(PROFILE_PHOTOS_BUCKET)
+                        .getPublicUrl(uploadData.path);
+                    
+                    const newDownloadURL = publicUrlData.publicUrl;
+                    await updateDoc(doc(db, 'users', currentUser.uid), { photoURL: newDownloadURL });
+
+                    profilePicPreview.src = newDownloadURL;
+                    showSaveConfirmation('Profile photo updated!');
+                    imageAdjustmentModal.classList.add('hidden');
+                    profilePhotoInput.value = '';
+
+                    // ⭐ 4. If an old photo existed, DELETE it now (cleanup)
+                    if (oldPhotoURL) {
+                        console.log("Old photo exists. Deleting:", oldPhotoURL);
+                        try {
+                            const urlPrefix = `${SUPABASE_URL}/storage/v1/object/public/${PROFILE_PHOTOS_BUCKET}/`;
+                            if (oldPhotoURL.startsWith(urlPrefix)) {
+                                const oldFilePath = oldPhotoURL.substring(urlPrefix.length);
+                                // Call the same Edge Function with 'delete' action
+                                const { error: deleteError } = await supabase.functions.invoke('storage-auth', {
+                                    body: { action: 'delete', filePath: oldFilePath },
+                                    headers: { 'Authorization': `Bearer ${firebaseToken}` }
+                                });
+                                if (deleteError) throw deleteError;
+                                console.log("Successfully deleted old photo:", oldFilePath);
+                            }
+                        } catch (deleteError) {
+                            // Don't bother the user with this error. The main task succeeded.
+                            console.error("Failed to clean up old profile photo:", deleteError);
+                        }
+                    }
+
+                } catch (error) {
+                    console.error("Error during photo upload/update:", error);
+                    showSaveConfirmation(`Update failed: ${error.message}`, true);
+                } finally {
+                    cropUploadBtn.disabled = false;
+                    cropUploadBtn.innerHTML = '<i data-lucide="crop" class="w-5 h-5 inline-block mr-2"></i> Crop & Upload';
+                    lucide.createIcons();
+                }
+            }, 'image/png');
+        });
+
+        deletePhotoBtn.addEventListener('click', async () => {
+            if (!currentUser || profilePicPreview.src.includes('No+Photo')) {
+                return showSaveConfirmation('No photo to delete.', true);
+            }
+            
+            deletePhotoBtn.disabled = true;
+            deletePhotoBtn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>';
+            lucide.createIcons();
+
+            const currentPhotoURL = profilePicPreview.src;
+
+            try {
+                // Extract the file path from the full Supabase URL
+                const urlPrefix = `${SUPABASE_URL}/storage/v1/object/public/${PROFILE_PHOTOS_BUCKET}/`;
+                if (!currentPhotoURL.startsWith(urlPrefix)) {
+                    throw new Error("Not a valid Supabase storage URL.");
+                }
+                const filePath = currentPhotoURL.substring(urlPrefix.length);
+
+                const firebaseToken = await currentUser.getIdToken();
+
+                // Call the Edge Function to perform the deletion securely
+                const { error: deleteError } = await supabase.functions.invoke('storage-auth', {
+                    body: { action: 'delete', filePath: filePath },
+                    headers: { 'Authorization': `Bearer ${firebaseToken}` }
+                });
+                if (deleteError) throw deleteError;
+
+                await updateDoc(doc(db, 'users', currentUser.uid), { photoURL: null });
+
+                profilePicPreview.src = "https://placehold.co/150x150/9CA3AF/FFFFFF?text=No+Photo";
+                showSaveConfirmation('Profile photo deleted.');
+            } catch (error) {
+                console.error("Error deleting photo:", error);
+                showSaveConfirmation(`Delete failed: ${error.message}`, true);
+            } finally {
+                deletePhotoBtn.disabled = false;
+                deletePhotoBtn.innerHTML = '<i data-lucide="trash-2" class="w-5 h-5"></i>';
+                lucide.createIcons();
+            }
+        });
+
+        // --- Auth State Change Listener (Page Security and Data Loading) ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                profileEmail.value = currentUser.email;
+                const userDocRef = doc(db, 'users', currentUser.uid);
+
+                onSnapshot(userDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        profileName.value = data.name || '';
+                        profileUsername.value = data.username || '';
+                        profileHobbies.value = data.hobbies || '';
+                        profileBio.value = data.bio || '';
+                        profilePicPreview.src = data.photoURL || "https://placehold.co/150x150/9CA3AF/FFFFFF?text=No+Photo";
+                        updateBioCharCount();
+                    } else {
+                        // Create a new user document if it doesn't exist
+                        setDoc(userDocRef, {
+                            email: currentUser.email, name: 'New User', username: '', hobbies: '', bio: '', photoURL: null, createdAt: new Date()
+                        }).catch(err => console.error("Error creating user doc:", err));
+                    }
+                }, (error) => console.error("Error listening to user document:", error));
+
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        // --- Event Listeners for Profile/Password Management ---
+        backToChatBtn.addEventListener('click', () => window.location.href = 'chat.html');
+
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                // No need to sign out of Supabase client-side
+                window.location.href = "login.html";
+            } catch (error) {
+                console.error("Logout Error:", error);
+            }
+        });
+        
+        saveProfileBtn.addEventListener('click', async () => {
+            if (!currentUser) return;
+            try {
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    username: profileUsername.value,
+                    hobbies: profileHobbies.value,
+                    bio: profileBio.value,
+                    updatedAt: new Date()
+                });
+                showSaveConfirmation('Profile changes saved!');
+            } catch (error) {
+                showSaveConfirmation('Error saving profile. Please try again.', true);
+            }
+        });
+
+        savePasswordBtn.addEventListener('click', async () => {
+            const currentPassword = currentPasswordInput.value;
+            const newPassword = newPasswordInput.value;
+            const confirmNewPassword = confirmNewPasswordInput.value;
+
+            if (!currentPassword || !newPassword || !confirmNewPassword) return showSaveConfirmation('Please fill all password fields.', true);
+            if (newPassword !== confirmNewPassword) return showSaveConfirmation('New passwords do not match.', true);
+
+            try {
+                const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+                await reauthenticateWithCredential(currentUser, credential);
+                await updatePassword(currentUser, newPassword);
+                showSaveConfirmation('Password updated successfully!');
+                currentPasswordInput.value = '';
+                newPasswordInput.value = '';
+                confirmNewPasswordInput.value = '';
+            } catch (error) {
+                const message = error.code === 'auth/wrong-password' ? 'Incorrect current password.' : 'Password update failed.';
+                showSaveConfirmation(message, true);
+            }
+        });
+
+        profileBio.addEventListener('input', updateBioCharCount);
+
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+    </script>
+</body>
+</html>

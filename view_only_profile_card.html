@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Using Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease;
+        }
+        /* This ensures Tailwind's dark mode classes are active based on system preference */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1a202c; /* Fallback for dark body if gradient doesn't cover fully */
+            }
+        }
+    </style>
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/favicon/site.webmanifest">
+</head>
+<body class="bg-gradient-to-br from-purple-100 to-indigo-200 dark:from-gray-900 dark:to-gray-800 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white dark:bg-gray-700 rounded-3xl shadow-xl p-8 max-w-sm w-full space-y-6 transform transition-all duration-300 hover:scale-105 relative">
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="absolute inset-0 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 flex items-center justify-center rounded-3xl z-10">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent"></div>
+        </div>
+
+        <!-- User ID Display -->
+        <div class="text-xs text-gray-500 dark:text-gray-400 text-right mb-2">
+            User ID: <span id="user-id">Loading...</span>
+        </div>
+
+        <!-- Profile Picture -->
+        <div class="flex justify-center">
+            <img
+                id="profile-pic-display"
+                src="https://placehold.co/120x120/a78bfa/ffffff?text=JP"
+                alt="Profile Picture"
+                class="w-32 h-32 rounded-full border-4 border-purple-500 dark:border-purple-400 shadow-lg object-cover"
+                onerror="this.onerror=null;this.src='https://placehold.co/120x120/9CA3AF/FFFFFF?text=No+Photo';"
+            >
+        </div>
+
+        <!-- Name -->
+        <div class="text-center">
+            <h1 id="profile-name" class="text-3xl font-bold text-gray-800 dark:text-white">Loading Name...</h1>
+            <p id="profile-username" class="text-purple-600 dark:text-purple-300 text-lg font-medium"></p>
+        </div>
+
+        <!-- Bio -->
+        <div>
+            <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2 border-b-2 border-purple-300 dark:border-purple-600 pb-1">About Me</h2>
+            <p id="profile-bio" class="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">Loading Bio...</p>
+        </div>
+
+        <!-- Hobby -->
+        <div>
+            <h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2 border-b-2 border-purple-300 dark:border-purple-600 pb-1">My Hobbies</h2>
+            <p id="profile-hobbies" class="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">Loading Hobbies...</p>
+        </div>
+
+        <!-- Message Box -->
+        <div id="message-box" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-md hidden transition-opacity duration-300">
+            Error loading profile!
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase (provided by the Canvas environment)
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyADtCEmADN8ueIwBb91mohYv5eiL9plgz0",
+            authDomain: "yushi-login.firebaseapp.com",
+            projectId: "yushi-login",
+            storageBucket: "yushi-login.firebasestorage.app",
+            messagingSenderId: "75893637403",
+            appId: "1:75893637403:web:9f8fd7954714ecf01f13be",
+            measurementId: "G-58ZDG54Z4P"
+        };
+
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // DOM Elements
+        const profilePicDisplay = document.getElementById('profile-pic-display'); // Added
+        const profileNameDisplay = document.getElementById('profile-name');
+        const profileUsernameDisplay = document.getElementById('profile-username'); // Added
+        const profileBioDisplay = document.getElementById('profile-bio');
+        const profileHobbiesDisplay = document.getElementById('profile-hobbies'); // Renamed from Hobby
+        const userIdSpan = document.getElementById('user-id');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const messageBox = document.getElementById('message-box');
+
+        let currentViewerUserId = null; // To store the authenticated user viewing the profile
+
+        // Extract the target profile's user ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const profileToViewUserId = urlParams.get('userId'); // This is the ID of the profile to display
+
+        /**
+         * Shows a message box with a given message.
+         * @param {string} message The message to display.
+         * @param {string} type The type of message (e.g., 'success', 'error').
+         */
+        function showMessageBox(message, type = 'success') {
+            messageBox.textContent = message;
+            messageBox.className = `absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg shadow-md transition-opacity duration-300 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} `;
+            messageBox.classList.remove('hidden');
+            messageBox.classList.add('opacity-100');
+
+            setTimeout(() => {
+                messageBox.classList.remove('opacity-100');
+                messageBox.classList.add('opacity-0');
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 300); // Wait for fade out transition
+            }, 3000); // Message visible for 3 seconds
+        }
+
+        /**
+         * Shows or hides the loading indicator.
+         * @param {boolean} show True to show, false to hide.
+         */
+        function toggleLoading(show) {
+            if (show) {
+                loadingIndicator.classList.remove('hidden');
+            } else {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Fetches and listens for real-time updates to the profile data from Firestore.
+         */
+        function setupProfileListener() {
+            if (!profileToViewUserId) {
+                console.warn("No user ID found in URL for profile listener setup.");
+                profileNameDisplay.textContent = "Error: No User ID Specified";
+                profileUsernameDisplay.textContent = "";
+                profileBioDisplay.textContent = "Please ensure a user ID is provided in the URL.";
+                profileHobbiesDisplay.textContent = "N/A";
+                userIdSpan.textContent = "N/A"; // Display N/A if no user ID
+                toggleLoading(false);
+                return;
+            }
+
+            toggleLoading(true);
+            // Display the user ID we are trying to view
+            userIdSpan.textContent = profileToViewUserId;
+
+            // --- CORRECTED PATH BASED ON `profile-account-settings.html` ---
+            // The profile data is directly stored as a document in the 'users' collection,
+            // with the document ID being the user's UID.
+            const profileDocRef = doc(db, `users`, profileToViewUserId);
+
+            console.log("Attempting to read from Firestore path:", profileDocRef.path); // Log the full path
+
+            // Set up a real-time listener
+            onSnapshot(profileDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    // Map fields from `profile-account-settings.html` save structure
+                    profileNameDisplay.textContent = data.name || 'No Name Provided';
+                    profileUsernameDisplay.textContent = data.username ? `@${data.username}` : 'No Nickname';
+                    profileBioDisplay.textContent = data.bio || 'No Bio Provided';
+                    profileHobbiesDisplay.textContent = data.hobbies || 'No Hobbies Provided';
+                    profilePicDisplay.src = data.photoURL || "https://placehold.co/120x120/9CA3AF/FFFFFF?text=No+Photo";
+                } else {
+                    console.log(`No profile data found at path: ${profileDocRef.path}.`);
+                    profileNameDisplay.textContent = "Profile Not Found";
+                    profileUsernameDisplay.textContent = "";
+                    profileBioDisplay.textContent = "This user may not have set up their profile yet.";
+                    profileHobbiesDisplay.textContent = "";
+                    profilePicDisplay.src = "https://placehold.co/120x120/9CA3AF/FFFFFF?text=No+Photo";
+                }
+                toggleLoading(false);
+            }, (error) => {
+                console.error("Error listening to profile data:", error);
+                showMessageBox(`Error loading profile for ${profileToViewUserId}. Please check console.`, "error");
+                profileNameDisplay.textContent = "Error Loading Profile";
+                profileUsernameDisplay.textContent = "";
+                profileBioDisplay.textContent = "Could not retrieve data.";
+                profileHobbiesDisplay.textContent = "";
+                profilePicDisplay.src = "https://placehold.co/120x120/9CA3AF/FFFFFF?text=Error";
+                toggleLoading(false);
+            });
+        }
+
+        // Authentication State Observer for the VIEWER
+        onAuthStateChanged(auth, async (user) => {
+            toggleLoading(true); // Show loading indicator during authentication
+            if (user) {
+                // A user (the viewer) is already signed in.
+                currentViewerUserId = user.uid;
+                console.log("Viewer authenticated as:", currentViewerUserId);
+                setupProfileListener(); // Proceed to set up the profile listener for the specified user
+            } else {
+                // No user (viewer) is signed in. Attempt anonymous sign-in to satisfy Firestore rules.
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        currentViewerUserId = auth.currentUser.uid;
+                        console.log("Viewer signed in with custom token:", currentViewerUserId);
+                        setupProfileListener();
+                    } else {
+                        await signInAnonymously(auth);
+                        currentViewerUserId = auth.currentUser.uid;
+                        console.log("Viewer signed in anonymously:", currentViewerUserId);
+                        setupProfileListener();
+                    }
+                } catch (error) {
+                    console.error("Error during viewer authentication:", error);
+                    showMessageBox("Authentication required to view profiles. Please refresh.", "error");
+                    userIdSpan.textContent = "Auth Error"; // Indicate viewer auth problem
+                    profileNameDisplay.textContent = "Authentication Failed";
+                    profileUsernameDisplay.textContent = "";
+                    profileBioDisplay.textContent = "Please ensure you have network connectivity and are authorized.";
+                    profileHobbiesDisplay.textContent = "";
+                    profilePicDisplay.src = "https://placehold.co/120x120/9CA3AF/FFFFFF?text=Auth+Error";
+                    toggleLoading(false); // Hide loading on auth error
+                }
+            }
+        });
+    </script>
+</body>
+</html>

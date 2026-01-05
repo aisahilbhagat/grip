@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en" class="dark"> <!-- Forced Dark Mode class for ZZZ Style base -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yushi - Neural Link</title>
+    
+    <!-- Google Fonts: Rajdhani (Tech headers) & JetBrains Mono (Data) & Inter (Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* --- ZZZ STYLE VARIABLES --- */
+        :root {
+            --z-bg-deep: #050505;
+            --z-bg-panel: #111111;
+            --z-bg-surface: #1a1a1a;
+            
+            --z-accent: #ccff00; /* Acid Green */
+            --z-accent-dim: #8fa300;
+            --z-accent-text: #000000;
+            
+            --z-text-main: #ffffff;
+            --z-text-dim: #888888;
+            --z-text-mono: #aaddff; /* Pale Cyan for data */
+            
+            --z-border: #333333;
+            --z-border-active: #ccff00;
+            
+            --z-danger: #ff2a2a;
+            
+            --font-tech: 'Rajdhani', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-body: 'Inter', sans-serif;
+            
+            --cut-corner: polygon(
+                10px 0, 100% 0, 
+                100% calc(100% - 10px), calc(100% - 10px) 100%, 
+                0 100%, 0 10px
+            );
+        }
+
+        /* --- GLOBAL RESET & BASE --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--z-bg-deep);
+            color: var(--z-text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            /* Tech Grid Background */
+            background-image: 
+                linear-gradient(var(--z-bg-panel) 1px, transparent 1px),
+                linear-gradient(90deg, var(--z-bg-panel) 1px, transparent 1px);
+            background-size: 40px 40px;
+            overflow: hidden; /* Prevent body scroll, app handles it */
+        }
+
+        /* --- CUSTOM SCROLLBAR (Tech Style) --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--z-bg-deep);
+            border-left: 1px solid var(--z-border);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border: 1px solid var(--z-bg-deep);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--z-accent);
+        }
+
+        /* --- MAIN APP CONTAINER --- */
+        #main-app-container {
+            width: 100%;
+            max-width: 64rem;
+            height: 90vh;
+            background-color: var(--z-bg-panel);
+            border: 2px solid var(--z-border);
+            display: flex;
+            position: relative;
+            /* The "Frame" Look */
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+        
+        /* Decorative Corner Brackets via Pseudo-elements */
+        #main-app-container::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px;
+            width: 20px; height: 20px;
+            border-top: 4px solid var(--z-accent);
+            border-left: 4px solid var(--z-accent);
+            z-index: 10;
+        }
+        #main-app-container::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; right: -2px;
+            width: 20px; height: 20px;
+            border-bottom: 4px solid var(--z-accent);
+            border-right: 4px solid var(--z-accent);
+            z-index: 10;
+        }
+
+        .hidden { display: none !important; }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--z-bg-panel);
+        }
+
+        /* --- HEADER --- */
+        .sidebar-header {
+            padding: 1.5rem;
+            background: var(--z-bg-surface);
+            border-bottom: 2px solid var(--z-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+        
+        /* User Profile in Header */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .user-avatar {
+            width: 3rem;
+            height: 3rem;
+            /* Tech Shape */
+            clip-path: polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%);
+            object-fit: cover;
+            border: 2px solid transparent; /* Clip path hides border, so we use outline or pseudo if needed, but clean is good */
+            background: #333;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .user-avatar:hover {
+            transform: scale(1.05);
+            background: var(--z-accent);
+        }
+        .user-name {
+            font-family: var(--font-tech);
+            font-weight: 700;
+            font-size: 1.25rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--z-text-main);
+            cursor: pointer;
+        }
+        .user-name:hover {
+            color: var(--z-accent);
+        }
+
+        /* Header Buttons */
+        .icon-btn {
+            background: transparent;
+            border: 1px solid var(--z-border);
+            color: var(--z-text-dim);
+            padding: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover {
+            border-color: var(--z-accent);
+            color: var(--z-accent);
+            box-shadow: 0 0 10px rgba(204, 255, 0, 0.2);
+        }
+
+        /* Settings Dropdown */
+        #settings-dropdown {
+            position: absolute;
+            right: 1.5rem;
+            top: 5rem;
+            width: 14rem;
+            background: var(--z-bg-deep);
+            border: 1px solid var(--z-border);
+            z-index: 50;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .dropdown-item {
+            width: 100%;
+            text-align: left;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #222;
+            color: var(--z-text-main);
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+        }
+        .dropdown-item:hover {
+            background: var(--z-accent);
+            color: var(--z-accent-text);
+            font-weight: 700;
+        }
+        .dropdown-item.text-red { color: var(--z-danger); }
+        .dropdown-item.text-red:hover { background: var(--z-danger); color: white; }
+
+        /* --- SEARCH AREA --- */
+        .search-area {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--z-border);
+            background: linear-gradient(180deg, var(--z-bg-surface) 0%, var(--z-bg-panel) 100%);
+        }
+        .search-wrapper {
+            position: relative;
+        }
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--z-text-dim);
+            width: 1.2rem;
+            height: 1.2rem;
+        }
+        .search-input {
+            width: 100%;
+            background: #080808;
+            border: 1px solid var(--z-border);
+            color: var(--z-text-main);
+            padding: 0.8rem 1rem 0.8rem 3rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s;
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+        }
+        .search-input:focus {
+            border-color: var(--z-accent);
+            background: #000;
+        }
+
+        /* --- TABS (The Switch Board) --- */
+        .nav-tabs {
+            display: flex;
+            background: var(--z-bg-deep);
+            border-bottom: 1px solid var(--z-border);
+            padding: 0 1.5rem;
+            gap: 2px;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 1rem 0;
+            background: var(--z-bg-panel);
+            border: none;
+            color: var(--z-text-dim);
+            font-family: var(--font-tech);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 1rem;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-top: 2px solid transparent;
+            min-width: 100px;
+        }
+        .tab-btn:hover {
+            color: var(--z-text-main);
+            background: #1e1e1e;
+        }
+        .tab-btn.active {
+            color: var(--z-accent);
+            background: var(--z-bg-panel);
+            border-top: 2px solid var(--z-accent);
+            /* Glowing text effect */
+            text-shadow: 0 0 8px rgba(204, 255, 0, 0.4);
+        }
+
+        /* --- CONTENT AREA --- */
+        #tab-content {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--z-bg-panel);
+            padding: 0;
+            position: relative;
+        }
+        
+        /* Diagonal Stripe Decoration for empty space */
+        #tab-content::before {
+            content: '';
+            position: fixed;
+            bottom: 0; right: 0;
+            width: 200px; height: 200px;
+            background: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 10px,
+                rgba(255, 255, 255, 0.03) 10px,
+                rgba(255, 255, 255, 0.03) 20px
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* --- LIST ITEMS (Cards) --- */
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #222;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            background: var(--z-bg-panel);
+        }
+        .list-item:hover {
+            background: var(--z-bg-surface);
+            padding-left: 2rem; /* Slide effect */
+        }
+        .list-item:hover::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            background: var(--z-accent);
+        }
+        
+        .item-avatar {
+            width: 3.5rem;
+            height: 3.5rem;
+            /* Hex-ish clip path */
+            clip-path: polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%);
+            margin-right: 1.25rem;
+            object-fit: cover;
+            background: #222;
+            flex-shrink: 0;
+        }
+        .item-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.25rem;
+        }
+        .item-title {
+            font-family: var(--font-tech);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--z-text-main);
+            text-transform: uppercase;
+        }
+        .item-meta {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--z-accent);
+        }
+        .item-subtitle {
+            font-size: 0.85rem;
+            color: var(--z-text-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .list-item:hover .item-title {
+            color: var(--z-accent);
+        }
+
+        /* --- DISCOVER & REQUEST ITEMS --- */
+        .discover-item {
+            background: var(--z-bg-surface);
+            margin: 1rem 1.5rem;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid var(--z-border);
+            /* Cut corner bottom-right */
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+            transition: transform 0.2s;
+        }
+        .discover-item:hover {
+            border-color: var(--z-text-dim);
+            transform: translateY(-2px);
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-family: var(--font-tech);
+            font-weight: 700;
+            text-transform: uppercase;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            letter-spacing: 0.05em;
+        }
+        .btn-primary {
+            background: var(--z-accent);
+            color: var(--z-accent-text);
+        }
+        .btn-primary:hover {
+            background: #fff;
+            box-shadow: 0 0 15px rgba(204, 255, 0, 0.5);
+        }
+        .btn-sm {
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            clip-path: none; /* simple rect for small btns */
+            border-radius: 2px;
+        }
+        .btn-green {
+            background: transparent;
+            border: 1px solid var(--z-accent);
+            color: var(--z-accent);
+        }
+        .btn-green:hover {
+            background: var(--z-accent);
+            color: black;
+        }
+        .btn-disabled {
+            background: #333;
+            color: #555;
+            cursor: not-allowed;
+            border: 1px solid #444;
+        }
+
+        /* --- HEADERS IN TABS --- */
+        h2, h3 {
+            font-family: var(--font-tech);
+            text-transform: uppercase;
+            color: var(--z-text-main);
+            letter-spacing: 1px;
+        }
+
+        /* --- MODALS (The Popups) --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background: var(--z-bg-panel);
+            width: 100%;
+            max-width: 30rem;
+            border: 1px solid var(--z-border);
+            box-shadow: 0 0 50px rgba(0,0,0,0.7);
+            position: relative;
+            /* Heavy border top */
+            border-top: 4px solid var(--z-accent);
+        }
+        .modal-header {
+            padding: 1.5rem;
+            background: var(--z-bg-surface);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--z-border);
+        }
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--z-text-main);
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--z-text-dim);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .modal-close:hover { color: var(--z-danger); }
+        
+        .modal-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--z-text-dim);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+        .form-input {
+            width: 100%;
+            background: #050505;
+            border: 1px solid var(--z-border);
+            color: white;
+            padding: 0.8rem;
+            font-family: var(--font-mono);
+            outline: none;
+        }
+        .form-input:focus {
+            border-color: var(--z-accent);
+        }
+
+        /* Friend Selection Tags */
+        .selected-members {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            min-height: 2.5rem;
+            border: 1px dashed #333;
+            padding: 0.5rem;
+            background: #080808;
+        }
+        .member-tag {
+            display: inline-flex;
+            align-items: center;
+            background: var(--z-accent);
+            color: black;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+        }
+        .tag-close {
+            background: none;
+            border: none;
+            margin-left: 0.5rem;
+            cursor: pointer;
+            color: black;
+            font-weight: 900;
+        }
+
+        .friend-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-bottom: 1px solid #222;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .friend-item:hover { background: #1a1a1a; }
+        .friend-item.selected {
+            background: #1a1a1a;
+            border-left: 4px solid var(--z-accent);
+        }
+
+        /* --- LOADING SCREEN (Glitchy Style) --- */
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Keeping original BG image but overlaying a grid */
+            background-image: url("giB5dW.jpg");
+            background-size: cover;
+            background-position: center;
+        }
+        #loading-screen::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.85); /* Darken it heavily */
+            z-index: 1;
+        }
+        .loading-container {
+            z-index: 10;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .loading-spinner-large {
+            width: 80px;
+            height: 80px;
+            border: 4px solid #333;
+            border-top: 4px solid var(--z-accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .loading-text-large {
+            font-family: var(--font-tech);
+            color: var(--z-accent);
+            font-size: 2rem;
+            margin-top: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 10px var(--z-accent);
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* --- MORE OPTIONS DROPDOWN --- */
+        .more-options-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: var(--z-bg-deep);
+            border: 1px solid var(--z-border);
+            width: 10rem;
+            z-index: 20;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-container">
+            <div class="loading-spinner-large"></div>
+            <div class="loading-text-large">INITIALIZING...</div>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="main-app-container" class="hidden">
+
+        <!-- Left Sidebar (Contacts/Chats/Groups/Discover/Requests) -->
+        <div class="sidebar">
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <img id="user-profile-avatar" src="https://placehold.co/40x40/4CAF50/ffffff?text=U" alt="User Avatar" class="user-avatar">
+                    <span id="user-profile-name" class="user-name">My Profile</span>
+                </div>
+                <div class="header-actions">
+                    <button id="settings-btn" class="icon-btn" title="Settings">
+                        <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
+                    </button>
+                    <!-- Settings Dropdown -->
+                    <div id="settings-dropdown" class="hidden">
+                        <button id="profile-account-settings-option" class="dropdown-item">/// SYSTEM_USER</button>
+                        <button id="about-yushi-option" class="dropdown-item">/// ABOUT_YUSHI</button>
+                        <button id="logout-option" class="dropdown-item text-red">/// LOGOUT_SEQUENCE</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs custom-scrollbar">
+                <button id="tab-chats" class="tab-btn active">CHATS</button>
+                <button id="tab-groups" class="tab-btn">GROUPS</button>
+                <button id="tab-discover" class="tab-btn">DISCOVER</button>
+                <button id="tab-requests" class="tab-btn">REQ</button>
+            </div>
+
+            <!-- Content Area for Tabs -->
+            <div id="tab-content" class="custom-scrollbar">
+                <!-- Chats Tab Content -->
+                <div id="content-chats">
+                    <p style="padding: 2rem; text-align: center; font-family: var(--font-mono); color: var(--z-text-dim);">// WAITING FOR DATA...</p>
+                </div>
+
+                <!-- Groups Tab Content -->
+                <div id="content-groups" class="hidden" style="padding: 1.5rem;">
+                    <button id="create-group-btn" class="btn btn-primary" style="width: 100%;">
+                        <i data-lucide="users-round" style="width: 18px; height: 18px;"></i>
+                        <span>INITIALIZE GROUP</span>
+                    </button>
+                    <div style="margin-top: 2rem;">
+                        <h3 style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--z-text-dim);">// YOUR_SQUADS</h3>
+                        <div id="groups-list-container">
+                           <p style="text-align: center; font-family: var(--font-mono); color: var(--z-text-dim);">[EMPTY_SET]</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Discover Tab Content -->
+                <div id="content-discover" class="hidden" style="padding: 0;">
+                    <div style="padding: 1.5rem; border-bottom: 1px solid var(--z-border);">
+                         <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">NETWORK SEARCH</h2>
+                         <!-- Search Bar for Discover -->
+                        <div class="search-wrapper">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="discover-search-input" placeholder="FIND AGENT..." class="search-input">
+                        </div>
+                    </div>
+                    
+                    <div id="discover-list-container">
+                        <p style="padding: 2rem; text-align: center; font-family: var(--font-mono); color: var(--z-text-dim);">// SCANNING NETWORK...</p>
+                    </div>
+                </div>
+
+                <!-- Requests Tab Content -->
+                <div id="content-requests" class="hidden" style="padding: 0;">
+                    <div style="padding: 1.5rem; border-bottom: 1px solid var(--z-border);">
+                        <h2 style="font-size: 1.5rem;">INCOMING SIGNALS</h2>
+                    </div>
+                    <div id="requests-list-container">
+                         <p style="padding: 2rem; text-align: center; font-family: var(--font-mono); color: var(--z-text-dim);">// NO SIGNAL...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="create-group-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">NEW SQUADRON</h2>
+                <button id="close-group-modal" class="modal-close">
+                    <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <label for="group-name" class="form-label">SQUAD DESIGNATION</label>
+                    <input type="text" id="group-name" placeholder="ENTER NAME..." class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">OPERATIVES SELECTED</label>
+                    <div id="selected-members-container" class="selected-members"></div>
+                </div>
+                <div>
+                    <h3 style="font-family: var(--font-tech); color: white; margin-bottom: 0.5rem;">RECRUIT OPERATIVES</h3>
+                    <div class="search-wrapper" style="margin-bottom: 1rem;">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="member-search-input" placeholder="SEARCH ALIAS..." class="search-input">
+                    </div>
+                    <div id="friends-list-container" class="custom-scrollbar" style="max-height: 12rem; overflow-y: auto; border: 1px solid var(--z-border);"></div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                    <button id="create-group-submit-btn" class="btn btn-primary" style="width: 100%;">
+                        CONFIRM SQUAD
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Summary Modal -->
+    <div id="summary-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">MISSION REPORT</h2>
+                <button id="close-summary-modal" class="modal-close">
+                    <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+                </button>
+            </div>
+            <div id="summary-content" class="custom-scrollbar" style="padding: 1.5rem; max-height: 20rem; overflow-y: auto; font-family: var(--font-mono); color: var(--z-text-main);">
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <div class="loading-spinner-large" style="width: 40px; height: 40px; border-width: 2px;"></div>
+                    <span style="margin-left: 1rem; color: var(--z-text-dim);">PROCESSING...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            collection, 
+            query, 
+            where, 
+            onSnapshot,
+            getDoc,
+            updateDoc,
+            addDoc,
+            setDoc,
+            arrayUnion,
+            arrayRemove,
+            serverTimestamp,
+            getDocs,
+            writeBatch
+        } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyADtCEmADN8ueIwBb91mohYv5eiL9plgz0",
+            authDomain: "yushi-login.firebaseapp.com",
+            projectId: "yushi-login",
+            storageBucket: "yushi-login.appspot.com",
+            messagingSenderId: "75893637403",
+            appId: "1:75893637403:web:9f8fd7954714ecf01f13be",
+            measurementId: "G-58ZDG54Z4P"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- DOM Elements ---
+        const userProfileAvatar = document.getElementById('user-profile-avatar');
+        const userProfileName = document.getElementById('user-profile-name');
+        
+        const tabChats = document.getElementById('tab-chats');
+        const tabGroups = document.getElementById('tab-groups');
+        const tabDiscover = document.getElementById('tab-discover');
+        const tabRequests = document.getElementById('tab-requests');
+
+        const contentChats = document.getElementById('content-chats');
+        const contentGroups = document.getElementById('content-groups');
+        const contentDiscover = document.getElementById('content-discover');
+        const contentRequests = document.getElementById('content-requests');
+        const groupsListContainer = document.getElementById('groups-list-container');
+        const discoverListContainer = document.getElementById('discover-list-container');
+        const requestsListContainer = document.getElementById('requests-list-container');
+        const discoverSearchInput = document.getElementById('discover-search-input');
+
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsDropdown = document.getElementById('settings-dropdown');
+        const logoutOption = document.getElementById('logout-option');
+        const profileAccountSettingsOption = document.getElementById('profile-account-settings-option');
+        const aboutYushiOption = document.getElementById('about-yushi-option');
+
+        // Group creation elements
+        const createGroupBtn = document.getElementById('create-group-btn');
+        const createGroupModal = document.getElementById('create-group-modal');
+        const closeGroupModalBtn = document.getElementById('close-group-modal');
+        const groupNameInput = document.getElementById('group-name');
+        const friendsListContainer = document.getElementById('friends-list-container');
+        const selectedMembersContainer = document.getElementById('selected-members-container');
+        const createGroupSubmitBtn = document.getElementById('create-group-submit-btn');
+        const memberSearchInput = document.getElementById('member-search-input');
+
+        const BACKEND_BASE_URL = 'https://my-chat-ai-backend-render.onrender.com';
+
+        // --- Global State ---
+        let currentUser = null;
+        let unsubscribeChats = null;
+        let unsubscribeGroups = null;
+        let unsubscribeDiscover = null;
+        let unsubscribeRequests = null;
+        let selectedMembers = [];
+        
+        // --- Initialization ---
+        lucide.createIcons();
+
+        // ** Dark Mode Toggle based on system preference **
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function applySystemTheme() {
+            if (prefersDarkScheme.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        // Apply theme on load
+        applySystemTheme();
+
+        // Listen for changes in system theme preference
+        prefersDarkScheme.addEventListener('change', applySystemTheme);
+        // ** End Dark Mode Toggle **
+
+        // --- Helper function to open profile card in a new tab ---
+        function showUserProfile(userId) {
+            if (userId) {
+                window.open(`view_only_profile_card.html?userId=${userId}`, '_blank');
+            } else {
+                console.warn("Attempted to show profile with null userId.");
+            }
+        }
+
+        // --- Firebase Authentication ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in
+                currentUser = user;
+                
+                // Fetch user profile and update UI
+                const userDocRef = doc(db, "users", user.uid);
+                getDoc(userDocRef).then(docSnap => {
+                    if (docSnap.exists()) {
+                        const userData = docSnap.data();
+                        userProfileAvatar.src = userData.photoURL || `https://placehold.co/40x40/4CAF50/ffffff?text=${userData.name.charAt(0).toUpperCase()}`;
+                        userProfileName.textContent = userData.name;
+                    }
+                });
+                
+                userProfileAvatar.addEventListener('click', () => showUserProfile(currentUser.uid));
+                userProfileName.addEventListener('click', () => showUserProfile(currentUser.uid));
+
+                backfillChatsForExistingFriends();
+                
+                loadChats();
+                loadGroups();
+                loadDiscover();
+                loadRequests();
+
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('main-app-container').classList.remove('hidden');
+
+            } else {
+                if (unsubscribeChats) unsubscribeChats();
+                if (unsubscribeGroups) unsubscribeGroups();
+                if (unsubscribeDiscover) unsubscribeDiscover();
+                if (unsubscribeRequests) unsubscribeRequests();
+                
+                window.location.href = "login.html";
+            }
+        });
+
+        logoutOption.addEventListener('click', () => {
+            signOut(auth).catch(error => console.error("Logout Error:", error));
+        });
+
+        // --- Data Loading Functions ---
+        function loadChats() {
+            if (!currentUser) return;
+            if (unsubscribeChats) unsubscribeChats();
+
+            const q = query(collection(db, "users", currentUser.uid, "chats"));
+            unsubscribeChats = onSnapshot(q, (snapshot) => {
+                if (snapshot.empty) {
+                    contentChats.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--z-text-dim); font-family: var(--font-mono);">// NO_ACTIVE_CHATS</p>';
+                    return;
+                }
+                
+                contentChats.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const chatData = doc.data();
+                    const el = document.createElement("div");
+                    el.className = "list-item chat-item"; 
+                    el.dataset.chatId = doc.id;
+                    el.dataset.chatType = chatData.type;
+                    el.dataset.chatName = chatData.name;
+                    el.dataset.chatAvatar = chatData.photoURL;
+
+                    let otherUserId = null;
+                    if (chatData.type === 'individual') {
+                        otherUserId = doc.id.split('_').find(id => id !== currentUser.uid);
+                    }
+
+                    el.innerHTML = `
+                      <img src="${chatData.photoURL || 'https://placehold.co/50x50/25D366/fff?text=?'}" 
+                           class="item-avatar ${otherUserId ? 'profile-avatar' : ''}"
+                           ${otherUserId ? `data-user-id="${otherUserId}"` : ''}>
+                      <div class="item-content">
+                        <div class="item-header">
+                          <span class="item-title">${chatData.name}</span>
+                          <span class="item-meta">${chatData.lastMessageTimestamp ? new Date(chatData.lastMessageTimestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</span>
+                        </div>
+                        <p class="item-subtitle">${chatData.lastMessage || 'Tap to chat'}</p>
+                      </div>`;
+                    contentChats.appendChild(el);
+
+                    if (otherUserId) {
+                        const avatarImg = el.querySelector('.profile-avatar');
+                        if (avatarImg) {
+                            avatarImg.addEventListener('click', (event) => {
+                                event.stopPropagation();
+                                showUserProfile(otherUserId);
+                            });
+                        }
+                    }
+                });
+                lucide.createIcons();
+            });
+        }
+
+        function loadGroups() {
+            if (!currentUser) return;
+            if (unsubscribeGroups) unsubscribeGroups();
+
+            const gQ = query(collection(db, "groups"), where("members", "array-contains", currentUser.uid));
+            unsubscribeGroups = onSnapshot(gQ, (snap) => {
+                if (snap.empty) {
+                    groupsListContainer.innerHTML = '<p style="padding: 1rem; text-align: center; color: var(--z-text-dim); font-family: var(--font-mono);">// NO_SQUADS_ASSIGNED</p>';
+                    return;
+                }
+                groupsListContainer.innerHTML = "";
+                snap.forEach(docSnap => {
+                    const g = docSnap.data();
+                    if (!(g.leftUsers || []).includes(currentUser.uid)) {
+                        const el = document.createElement("div");
+                        el.className = "list-item chat-item";
+                        el.dataset.chatId = docSnap.id;
+                        el.dataset.chatType = "group";
+                        el.dataset.chatName = g.groupName;
+                        el.dataset.chatAvatar = "https://placehold.co/50x50/128C7E/fff?text=G";
+
+                        el.innerHTML = `
+                          <img src="https://placehold.co/50x50/34B7F1/fff?text=G" class="item-avatar">
+                          <div class="item-content">
+                            <div class="item-header">
+                              <span class="item-title">${g.groupName}</span>
+                              <span class="item-meta">${(g.members||[]).length} OPS</span>
+                            </div>
+                            <p class="item-subtitle">Tap to access comms</p>
+                          </div>`;
+                        groupsListContainer.appendChild(el);
+                    }
+                });
+                lucide.createIcons();
+            });
+        }
+
+        function loadDiscover() {
+            if (!currentUser) return;
+            if (unsubscribeDiscover) unsubscribeDiscover();
+
+            const searchTerm = discoverSearchInput.value.toLowerCase().trim();
+
+            unsubscribeDiscover = onSnapshot(collection(db, "users"), (snap) => {
+                discoverListContainer.innerHTML = "";
+                getDoc(doc(db, "users", currentUser.uid)).then(meSnap => {
+                    const myData = meSnap.data();
+                    const myFriends = myData.friends || [];
+                    const sentRequests = myData.sentRequests || [];
+                    const blockedUsers = myData.blockedUsers || [];
+
+                    snap.forEach(docSnap => {
+                        const u = docSnap.data();
+                        
+                        if (docSnap.id === currentUser.uid || 
+                            myFriends.includes(docSnap.id) || 
+                            blockedUsers.includes(docSnap.id) ||
+                            (searchTerm && !u.name.toLowerCase().includes(searchTerm))
+                        ) {
+                            return;
+                        }
+                        
+                        const el = document.createElement("div");
+                        el.className = "discover-item";
+                        
+                        let buttonHtml;
+                        if (sentRequests.includes(docSnap.id)) {
+                            buttonHtml = `<button class="btn btn-sm btn-disabled">REQ_SENT</button>`;
+                        } else {
+                            buttonHtml = `<button data-uid="${docSnap.id}" class="send-request-btn btn btn-sm btn-green">CONNECT</button>`;
+                        }
+
+                        el.innerHTML = `
+                            <div class="flex items-center" style="gap: 0.75rem;">
+                              <img src="${u.photoURL||'https://placehold.co/40x40/888/fff?text=?'}" 
+                                   class="user-avatar profile-avatar"
+                                   data-user-id="${docSnap.id}">
+                              <div><span style="font-family: var(--font-tech); font-weight: 700; color: var(--z-text-main); font-size: 1.1rem;">${u.name}</span></div>
+                            </div>
+                            ${buttonHtml}`;
+                        discoverListContainer.appendChild(el);
+
+                        const avatarImg = el.querySelector('.profile-avatar');
+                        if (avatarImg) {
+                            avatarImg.addEventListener('click', (event) => {
+                                event.stopPropagation();
+                                showUserProfile(docSnap.id);
+                            });
+                        }
+                    });
+                    if (discoverListContainer.innerHTML === '') {
+                        discoverListContainer.innerHTML = '<p style="padding: 1rem; text-align: center; color: var(--z-text-dim); font-family: var(--font-mono);">// NO_AGENTS_FOUND</p>';
+                    }
+                    lucide.createIcons();
+                });
+            });
+        }
+
+        function loadRequests() {
+            if (!currentUser) return;
+            if (unsubscribeRequests) unsubscribeRequests();
+
+            const rQ = query(collection(db, "requests"), where("to", "==", currentUser.uid), where("status", "==", "pending"));
+            unsubscribeRequests = onSnapshot(rQ, (snap) => {
+                if (snap.empty) {
+                    requestsListContainer.innerHTML = '<p style="padding: 1rem; text-align: center; color: var(--z-text-dim); font-family: var(--font-mono);">// NO_INCOMING_TRANSMISSIONS</p>';
+                    return;
+                }
+                requestsListContainer.innerHTML = "";
+                snap.forEach(async docSnap => {
+                    const r = docSnap.data();
+                    const fromSnap = await getDoc(doc(db, "users", r.from));
+                    const fromUser = fromSnap.data();
+
+                    const el = document.createElement("div");
+                    el.className = "discover-item";
+                    el.innerHTML = `
+                        <div class="flex items-center" style="gap: 0.75rem;">
+                          <img src="${fromUser.photoURL||'https://placehold.co/40x40/FFC107/fff?text=?'}" 
+                               class="user-avatar profile-avatar"
+                               data-user-id="${r.from}">
+                          <span style="font-family: var(--font-tech); font-weight: 700; color: var(--z-text-main); font-size: 1.1rem;">${fromUser.name}</span>
+                        </div>
+                        <div class="flex items-center relative" style="gap: 0.5rem;">
+                            <button data-req-id="${docSnap.id}" data-from-id="${r.from}" class="handle-request-btn btn btn-sm btn-green" data-action="accepted">ACCEPT</button>
+                            <button class="more-options-btn icon-btn" title="More options" style="width: 2rem; height: 2rem; border: 1px solid #333;">
+                                <i data-lucide="ellipsis-vertical" style="width: 20px; height: 20px;"></i>
+                            </button>
+                            <div class="more-options-dropdown hidden">
+                                <button data-req-id="${docSnap.id}" class="handle-request-btn dropdown-item text-red" data-action="rejected">REJECT</button>
+                                <button data-from-id="${r.from}" class="block-user-btn dropdown-item">BLOCK</button>
+                            </div>
+                        </div>`;
+                    requestsListContainer.appendChild(el);
+
+                    const avatarImg = el.querySelector('.profile-avatar');
+                    if (avatarImg) {
+                        avatarImg.addEventListener('click', (event) => {
+                            event.stopPropagation();
+                            showUserProfile(r.from);
+                        });
+                    }
+                });
+                lucide.createIcons();
+            });
+        }
+
+        // --- Group Creation Functions ---
+        async function renderFriendsList(searchTerm = '') {
+            if (!currentUser) return;
+            friendsListContainer.innerHTML = '';
+
+            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+            const userData = userDoc.data();
+            const friendIds = userData.friends || [];
+            
+            if (friendIds.length === 0) {
+                friendsListContainer.innerHTML = `<p style="padding: 1rem; color: var(--z-text-dim); font-family: var(--font-mono);">// NO_ALLIES_FOUND</p>`;
+                return;
+            }
+
+            const friendsPromises = friendIds.map(friendId => getDoc(doc(db, "users", friendId)));
+            const friendsSnapshots = await Promise.all(friendsPromises);
+            const friends = friendsSnapshots.map(snap => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    return { id: snap.id, name: data.name, photoURL: data.photoURL };
+                }
+                return null;
+            }).filter(f => f !== null);
+
+            const filteredFriends = friends.filter(friend => 
+                friend.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            if (filteredFriends.length === 0) {
+                friendsListContainer.innerHTML = `<p style="padding: 1rem; color: var(--z-text-dim); font-family: var(--font-mono);">// NO_MATCH_FOUND</p>`;
+                return;
+            }
+
+            filteredFriends.forEach(friend => {
+                const isSelected = selectedMembers.some(member => member.id === friend.id);
+                const friendItem = document.createElement('div');
+                friendItem.className = `friend-item ${isSelected ? 'selected' : ''}`;
+                friendItem.innerHTML = `
+                    <div class="flex items-center" style="gap: 0.75rem;">
+                        <img src="${friend.photoURL || 'https://placehold.co/40x40/cccccc/fff?text=?'}" alt="${friend.name}" class="user-avatar" style="width: 2.5rem; height: 2.5rem;">
+                        <div style="flex: 1;">
+                            <h4 style="font-family: var(--font-tech); font-weight: 700; color: var(--z-text-main); text-transform: uppercase;">${friend.name}</h4>
+                        </div>
+                    </div>
+                    <div class="select-icon">
+                        <i data-lucide="check" style="color: var(--z-accent); width: 20px; height: 20px;"></i>
+                    </div>
+                `;
+
+                friendItem.addEventListener('click', () => {
+                    toggleFriendSelection(friend);
+                });
+
+                friendsListContainer.appendChild(friendItem);
+            });
+            lucide.createIcons();
+        }
+
+        function renderSelectedMembers() {
+            selectedMembersContainer.innerHTML = '';
+            selectedMembers.forEach(member => {
+                const memberTag = document.createElement('span');
+                memberTag.className = 'member-tag';
+                memberTag.innerHTML = `
+                    ${member.name}
+                    <button class="tag-close" data-member-id="${member.id}">
+                        X
+                    </button>
+                `;
+                memberTag.querySelector('button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFriendSelection(member);
+                });
+                selectedMembersContainer.appendChild(memberTag);
+            });
+            lucide.createIcons();
+        }
+
+        function toggleFriendSelection(friend) {
+            const index = selectedMembers.findIndex(member => member.id === friend.id);
+            if (index > -1) {
+                selectedMembers.splice(index, 1);
+            } else {
+                selectedMembers.push(friend);
+            }
+            renderFriendsList(memberSearchInput.value);
+            renderSelectedMembers();
+        }
+
+        // --- Event Listeners ---
+        createGroupBtn.addEventListener('click', async () => {
+            createGroupModal.classList.remove('hidden');
+            selectedMembers = [];
+            await renderFriendsList();
+            renderSelectedMembers();
+        });
+
+        closeGroupModalBtn.addEventListener('click', () => {
+            createGroupModal.classList.add('hidden');
+            groupNameInput.value = '';
+            selectedMembers = [];
+            memberSearchInput.value = '';
+        });
+
+        memberSearchInput.addEventListener('input', (e) => {
+            renderFriendsList(e.target.value);
+        });
+
+        createGroupSubmitBtn.addEventListener('click', async () => {
+            const groupName = groupNameInput.value.trim();
+            if (!groupName) {
+                alert("ERROR: SQUAD NAME REQUIRED.");
+                return;
+            }
+            if (selectedMembers.length === 0) {
+                alert("ERROR: NO OPERATIVES SELECTED.");
+                return;
+            }
+
+            try {
+                const groupRef = await addDoc(collection(db, "groups"), {
+                    groupName: groupName,
+                    members: [currentUser.uid, ...selectedMembers.map(m => m.id)],
+                    createdBy: currentUser.uid,
+                    createdAt: serverTimestamp()
+                });
+
+                const chatData = {
+                    type: "group",
+                    name: groupName,
+                    photoURL: "https://placehold.co/50x50/34B7F1/fff?text=G",
+                    lastMessage: "SQUAD ESTABLISHED",
+                    lastMessageTimestamp: serverTimestamp()
+                };
+
+                const memberIds = [currentUser.uid, ...selectedMembers.map(m => m.id)];
+                const batch = writeBatch(db);
+                
+                memberIds.forEach(uid => {
+                    const chatDocRef = doc(collection(db, `users/${uid}/chats`), groupRef.id);
+                    batch.set(chatDocRef, chatData);
+                });
+                
+                await batch.commit();
+                closeGroupModalBtn.click();
+                alert(`SQUAD "${groupName}" DEPLOYED!`);
+            } catch (error) {
+                console.error("Error creating group:", error);
+                alert("SYSTEM ERROR: CREATION FAILED.");
+            }
+        });
+
+        // --- Dynamic Content Events ---
+        discoverListContainer.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('send-request-btn')) {
+                const toId = e.target.dataset.uid;
+                await sendRequest(toId);
+                e.target.textContent = "TRANSMITTED";
+                e.target.disabled = true;
+                e.target.classList.remove('btn-green');
+                e.target.classList.add('btn-disabled');
+            }
+        });
+
+        requestsListContainer.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('handle-request-btn')) {
+                const reqId = e.target.dataset.reqId;
+                const action = e.target.dataset.action;
+                const fromId = e.target.dataset.fromId;
+                await handleRequest(reqId, action, fromId);
+                e.target.closest('.discover-item').remove();
+            } else if (e.target.classList.contains('block-user-btn')) {
+                const fromId = e.target.dataset.fromId;
+                await blockUser(fromId);
+                e.target.closest('.discover-item').remove();
+            } else if (e.target.closest('.more-options-btn')) {
+                const btn = e.target.closest('.more-options-btn');
+                const dropdown = btn.nextElementSibling;
+                dropdown.classList.toggle('hidden');
+            }
+        });
+
+        contentChats.addEventListener('click', async (e) => {
+            const chatItem = e.target.closest('.chat-item');
+            if (chatItem) {
+                const chatId = chatItem.dataset.chatId;
+                const chatType = chatItem.dataset.chatType;
+                const chatName = encodeURIComponent(chatItem.dataset.chatName);
+                const chatAvatar = encodeURIComponent(chatItem.dataset.chatAvatar);
+                window.location.href = `chat_detail.html?chatId=${chatId}&chatType=${chatType}&chatName=${chatName}&chatAvatar=${chatAvatar}`;
+            }
+        });
+
+        groupsListContainer.addEventListener('click', async (e) => {
+            const chatItem = e.target.closest('.chat-item');
+            if (chatItem) {
+                const chatId = chatItem.dataset.chatId;
+                const chatType = chatItem.dataset.chatType;
+                const chatName = encodeURIComponent(chatItem.dataset.chatName);
+                const chatAvatar = encodeURIComponent(chatItem.dataset.chatAvatar);
+                window.location.href = `chat_detail.html?chatId=${chatId}&chatType=${chatType}&chatName=${chatName}&chatAvatar=${chatAvatar}`;
+            }
+        });
+
+        // --- Firestore Actions ---
+        async function sendRequest(toId) {
+            if (!currentUser) return;
+            const fromId = currentUser.uid;
+            await addDoc(collection(db, "requests"), {
+                from: fromId,
+                to: toId,
+                status: "pending",
+                createdAt: serverTimestamp()
+            });
+            await updateDoc(doc(db, "users", fromId), {
+                sentRequests: arrayUnion(toId)
+            });
+        }
+
+        async function handleRequest(reqId, action, fromId) {
+            if (!currentUser) return;
+            const toId = currentUser.uid;
+            const reqRef = doc(db, "requests", reqId);
+
+            if (action === 'accepted') {
+                await updateDoc(reqRef, { status: 'accepted' });
+                const fromRef = doc(db, "users", fromId);
+                const toRef = doc(db, "users", toId);
+                await updateDoc(fromRef, { friends: arrayUnion(toId) });
+                await updateDoc(toRef, { friends: arrayUnion(fromId) });
+
+                const chatId = [fromId, toId].sort().join('_');
+                const userData = await getDoc(fromRef);
+                const otherUserName = userData.data().name;
+                const otherUserPhoto = userData.data().photoURL;
+                
+                const chatDataForToUser = {
+                    type: "individual",
+                    name: otherUserName,
+                    photoURL: otherUserPhoto,
+                    lastMessage: "CONNECTION ESTABLISHED",
+                    lastMessageTimestamp: serverTimestamp()
+                };
+                await setDoc(doc(db, `users/${toId}/chats`, chatId), chatDataForToUser);
+                
+                const currentUserData = await getDoc(toRef);
+                const chatDataForFromUser = {
+                    type: "individual",
+                    name: currentUserData.data().name,
+                    photoURL: currentUserData.data().photoURL,
+                    lastMessage: "CONNECTION ESTABLISHED",
+                    lastMessageTimestamp: serverTimestamp()
+                };
+                await setDoc(doc(db, `users/${fromId}/chats`, chatId), chatDataForFromUser);
+                
+                if (unsubscribeChats) unsubscribeChats();
+                loadChats();
+
+            } else if (action === 'rejected') {
+                await updateDoc(reqRef, { status: 'rejected' });
+            }
+        }
+
+        async function blockUser(blockedUserId) {
+            if (!currentUser) return;
+            await updateDoc(doc(db, "users", currentUser.uid), {
+                blockedUsers: arrayUnion(blockedUserId)
+            });
+            const q = query(collection(db, "requests"), 
+                where("from", "==", blockedUserId),
+                where("to", "==", currentUser.uid),
+                where("status", "==", "pending")
+            );
+            const querySnapshot = await getDocs(q);
+            const batch = writeBatch(db);
+            querySnapshot.forEach(doc => {
+                batch.update(doc.ref, { status: 'rejected' });
+            });
+            await batch.commit();
+            loadRequests();
+            loadDiscover();
+        }
+        
+        async function backfillChatsForExistingFriends() {
+            if (!currentUser) return;
+            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+            const userData = userDoc.data();
+            const friends = userData.friends || [];
+
+            for (const friendId of friends) {
+                const chatId = [currentUser.uid, friendId].sort().join('_');
+                const chatDocRef = doc(db, `users/${currentUser.uid}/chats`, chatId);
+                const chatDocSnap = await getDoc(chatDocRef);
+
+                if (!chatDocSnap.exists()) {
+                    const friendSnap = await getDoc(doc(db, "users", friendId));
+                    if (friendSnap.exists()) {
+                        const friendData = friendSnap.data();
+                        await setDoc(chatDocRef, {
+                            type: "individual",
+                            name: friendData.name,
+                            photoURL: friendData.photoURL || null,
+                            lastMessage: "CONNECTION ESTABLISHED",
+                            lastMessageTimestamp: serverTimestamp()
+                        });
+                        const friendChatRef = doc(db, `users/${friendId}/chats`, chatId);
+                        const friendChatSnap = await getDoc(friendChatRef);
+                        if (!friendChatSnap.exists()) {
+                            await setDoc(friendChatRef, {
+                                type: "individual",
+                                name: userData.name,
+                                photoURL: userData.photoURL || null,
+                                lastMessage: "CONNECTION ESTABLISHED",
+                                lastMessageTimestamp: serverTimestamp()
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Tabs Logic ---
+        function switchTab(activeTab, activeContent) {
+            [tabChats, tabGroups, tabDiscover, tabRequests].forEach(tab => {
+                tab.classList.remove('active');
+            });
+            [contentChats, contentGroups, contentDiscover, contentRequests].forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            activeTab.classList.add('active');
+            activeContent.classList.remove('hidden');
+            activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+        }
+
+        tabChats.addEventListener('click', () => switchTab(tabChats, contentChats));
+        tabGroups.addEventListener('click', () => switchTab(tabGroups, contentGroups));
+        tabDiscover.addEventListener('click', () => {
+            switchTab(tabDiscover, contentDiscover);
+            loadDiscover();
+        });
+        tabRequests.addEventListener('click', () => switchTab(tabRequests, contentRequests));
+
+        settingsBtn.addEventListener('click', (e) => {
+            settingsDropdown.classList.toggle('hidden');
+            e.stopPropagation();
+        });
+        
+        profileAccountSettingsOption.addEventListener('click', () => {
+            window.location.href = "profile-account-settings.html";
+        });
+        
+        aboutYushiOption.addEventListener('click', () => {
+            window.open('about-yushi.html', '_blank');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!settingsDropdown.classList.contains('hidden') && 
+                !settingsDropdown.contains(e.target) && 
+                !e.target.closest('#settings-btn')) {
+                settingsDropdown.classList.add('hidden');
+            }
+            document.querySelectorAll('.more-options-dropdown').forEach(dropdown => {
+                if (!dropdown.classList.contains('hidden') && 
+                    !dropdown.contains(e.target) && 
+                    !e.target.closest('.more-options-btn')) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        });
+
+        discoverSearchInput.addEventListener('input', () => {
+            loadDiscover();
+        });
+    </script>
+</body>
+</html>

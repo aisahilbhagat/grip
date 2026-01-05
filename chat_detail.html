@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chat - GRIP</title>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Socket.io Client Library -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        /* === RESET & VARIABLES === */
+        :root {
+            /* Modern Indigo/Violet Theme */
+            --bg-color: #f8fafc; /* Cool Light Gray */
+            --card-bg: #ffffff;
+            --text-color: #1e293b; /* Slate 800 */
+            --subtext-color: #64748b; /* Slate 500 */
+            --border-color: #e2e8f0;
+            
+            /* Brand Colors */
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); /* Indigo to Violet */
+            --primary-solid: #4f46e5;
+            
+            /* Message Bubbles */
+            --msg-sent-text: #ffffff;
+            --msg-received-bg: #ffffff;
+            --msg-received-text: #1e293b;
+            
+            --input-bg: #f1f5f9;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Dark Mode Variables - Deep Space Theme */
+        html.dark {
+            --bg-color: #0f172a; /* Slate 900 */
+            --card-bg: #1e293b; /* Slate 800 */
+            --text-color: #f8fafc;
+            --subtext-color: #94a3b8;
+            --border-color: #334155;
+            
+            --primary-gradient: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+            
+            --msg-sent-text: #ffffff;
+            --msg-received-bg: #1e293b;
+            --msg-received-text: #f1f5f9;
+            
+            --input-bg: #334155;
+            --glass-bg: rgba(30, 41, 59, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overscroll-behavior-y: none;
+        }
+
+        /* === LAYOUT === */
+        .app-container {
+            background-color: var(--bg-color); /* Match body for seamless look */
+            width: 100%;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            /* Texture overlay for subtle detail */
+            background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 900px;
+                height: 90vh;
+                border-radius: 24px;
+                box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+                border: 1px solid var(--border-color);
+                background-color: var(--card-bg); /* Solid bg for desktop container */
+                overflow: hidden; /* rounded corners clip content */
+            }
+        }
+
+        /* === HEADER === */
+        .chat-header {
+            padding: 16px 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            z-index: 10;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            overflow: hidden;
+            gap: 12px;
+        }
+
+        .back-btn {
+            background: rgba(0,0,0,0.05);
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        html.dark .back-btn { background: rgba(255,255,255,0.1); }
+
+        .back-btn:active { transform: scale(0.95); }
+
+        /* Avatar removed, we keep this empty or remove if not needed, 
+           but structure kept for flex alignment */
+        
+        .header-info {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            letter-spacing: -0.02em;
+        }
+
+        .header-status {
+            font-size: 12px;
+            color: var(--primary-solid);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .header-status::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: currentColor;
+            border-radius: 50%;
+        }
+
+        .header-right {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .grip-brand {
+            font-weight: 900;
+            font-size: 14px;
+            letter-spacing: 2px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            user-select: none;
+        }
+
+        /* === MESSAGES AREA === */
+        .message-display {
+            flex: 1;
+            padding: 80px 16px 20px 16px; /* Top padding clears the fixed header */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            /* Ensure messages are visible above background pattern */
+            z-index: 1; 
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--subtext-color);
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        /* Scrollbar styling */
+        .message-display::-webkit-scrollbar { width: 4px; }
+        .message-display::-webkit-scrollbar-thumb { background-color: var(--subtext-color); border-radius: 10px; opacity: 0.3; }
+
+        /* Message Bubbles */
+        .message-row {
+            display: flex;
+            margin-bottom: 2px;
+            max-width: 100%;
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .message-row.sent {
+            justify-content: flex-end;
+        }
+        
+        .message-row.received {
+            justify-content: flex-start;
+        }
+
+        .message-content-wrapper {
+            max-width: 80%; /* Slightly wider than before */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-row.sent .message-content-wrapper {
+            align-items: flex-end;
+        }
+
+        .sender-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--subtext-color);
+            margin-bottom: 4px;
+            margin-left: 12px;
+        }
+
+        .message-bubble {
+            padding: 10px 16px;
+            font-size: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        /* Sent Bubble: Gradient, White Text, Rounded */
+        .message-row.sent .message-bubble {
+            background: var(--primary-gradient);
+            color: var(--msg-sent-text);
+            border-radius: 18px 18px 4px 18px; /* Squircle style, sharp bottom right */
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25); /* Glow effect */
+        }
+
+        /* Received Bubble: White card, shadow, dark text */
+        .message-row.received .message-bubble {
+            background-color: var(--msg-received-bg);
+            color: var(--msg-received-text);
+            border-radius: 18px 18px 18px 4px; /* Sharp bottom left */
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .message-time {
+            font-size: 10px;
+            color: var(--subtext-color);
+            margin-top: 4px;
+            margin-right: 4px;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+        .message-row.received .message-time { margin-left: 4px; }
+
+        .chat-image {
+            max-width: 100%;
+            border-radius: 12px;
+            margin-top: 4px;
+            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .file-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: inherit; /* Inherit form parent bubble */
+            text-decoration: none;
+            padding: 4px 0;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .message-row.sent .file-link { color: white; }
+        .message-row.received .file-link { color: var(--primary-solid); }
+
+        /* === INPUT AREA === */
+        .input-area {
+            padding: 16px 20px 24px 20px; /* More bottom padding for mobile gesture bar */
+            background-color: var(--card-bg);
+            /* Soft shadow pushing upwards */
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.03); 
+            flex-shrink: 0;
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            background-color: var(--input-bg);
+            border-radius: 24px; /* Fully rounded capsule */
+            display: flex;
+            align-items: center;
+            padding: 2px 16px;
+            min-height: 48px;
+            transition: box-shadow 0.2s;
+            border: 1px solid transparent;
+        }
+        
+        .input-wrapper:focus-within {
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.3);
+            background-color: var(--card-bg);
+        }
+
+        .message-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 12px 0;
+            color: var(--text-color);
+            font-size: 16px;
+            max-height: 120px;
+            resize: none; 
+        }
+        
+        .message-input::placeholder { color: var(--subtext-color); opacity: 0.7; }
+
+        .send-btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+        .send-btn:active { transform: scale(0.95); }
+        .send-btn:disabled {
+            background: var(--subtext-color);
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        /* === UTILITIES & MODALS === */
+        .hidden { display: none !important; }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); /* Slightly lighter overlay */
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .modal-overlay.show { display: flex; animation: fadeIn 0.2s; }
+
+        .modal-box {
+            background: var(--card-bg);
+            padding: 32px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+        }
+        
+        .file-modal-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        .file-modal-box {
+            max-width: 900px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            background: black; /* Media usually looks best on black */
+            border: none;
+            padding: 16px;
+        }
+        
+        .modal-btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .modal-btn:hover { opacity: 0.9; }
+        
+        .icon-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+        }
+
+        /* Spinner */
+        .spinner {
+            border: 3px solid rgba(0,0,0,0.05);
+            border-left-color: var(--primary-solid);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/favicon/site.webmanifest">
+</head>
+<body>
+    
+    <div class="app-container">
+        
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="header-left">
+                <button id="back-btn" class="back-btn" title="Back">
+                    <i data-lucide="arrow-left" width="24" height="24"></i>
+                </button>
+                <!-- Avatar Removed per request -->
+                <div class="header-info">
+                    <h2 id="chat-header-name" class="header-title">Loading...</h2>
+                    <p id="chat-header-status" class="header-status"></p>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <span class="grip-brand">GRIP</span>
+            </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="message-display" class="message-display">
+            <div class="empty-state">
+                <div style="background: var(--input-bg); padding: 20px; border-radius: 50%; margin-bottom: 16px;">
+                    <i data-lucide="message-square-dashed" width="32" height="32" style="color: var(--primary-solid);"></i>
+                </div>
+                <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;">Start Chatting</h3>
+                <p style="font-size: 14px;">Messages are end-to-end encrypted.</p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input type="text" id="message-input" placeholder="Type a message..." class="message-input" autocomplete="off">
+            </div>
+            
+            <button id="send-message-btn" class="send-btn">
+                <i data-lucide="send-horizontal" width="22" height="22" style="margin-left: -2px;"></i> 
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="custom-message-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div style="margin-bottom: 16px;">
+                <i data-lucide="info" width="40" height="40" style="color: var(--primary-solid)"></i>
+            </div>
+            <p id="modal-message" style="margin-bottom: 24px; font-size: 16px; color: var(--text-color); line-height: 1.5;"></p>
+            <button id="close-modal-btn" class="modal-btn" style="width: 100%; justify-content: center; margin-top: 0;">
+                Got it
+            </button>
+        </div>
+    </div>
+
+    <!-- File Preview Modal -->
+    <div id="fileModal" class="modal-overlay">
+      <div class="modal-box file-modal-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px;">
+             <h3 style="font-size: 16px; font-weight: 600; color: white;">Preview</h3>
+             <button onclick="closeFileModal()" class="icon-btn">
+                <i data-lucide="x" width="24" height="24"></i>
+             </button>
+        </div>
+        
+        <div id="fileModalContent" class="file-modal-content">
+            <!-- Content injected here -->
+        </div>
+        
+        <div style="margin-top: 16px; text-align: center;">
+          <a id="downloadBtn" href="#" download class="modal-btn" style="background: white; color: black; border: none;">
+              <i data-lucide="download" width="18" height="18"></i> Download
+          </a>
+        </div>
+      </div>
+    </div>
+
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc,
+            updateDoc,
+            arrayUnion,
+            arrayRemove,
+            serverTimestamp,
+            deleteDoc 
+        } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyADtCEmADN8ueIwBb91mohYv5eiL9plgz0",
+            authDomain: "yushi-login.firebaseapp.com",
+            projectId: "yushi-login",
+            storageBucket: "yushi-login.appspot.com",
+            messagingSenderId: "75893637403",
+            appId: "1:75893637403:web:9f8fd7954714ecf01f13be",
+            measurementId: "G-58ZDG54Z4P"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- DOM Elements ---
+        const backBtn = document.getElementById('back-btn');
+        const chatHeaderName = document.getElementById('chat-header-name');
+        // const chatHeaderAvatar = document.getElementById('chat-header-avatar'); // Removed
+        const chatHeaderStatus = document.getElementById('chat-header-status');
+        const messageDisplay = document.getElementById('message-display');
+        const messageInput = document.getElementById('message-input');
+        const sendMessageBtn = document.getElementById('send-message-btn');
+        
+        const customMessageModal = document.getElementById('custom-message-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        // --- Dark Mode Script ---
+        const themePreference = window.matchMedia('(prefers-color-scheme: dark)');
+        function setDarkModeClass() {
+            if (themePreference.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+        setDarkModeClass();
+        themePreference.addEventListener('change', setDarkModeClass);
+
+
+        // IMPORTANT: Replace with your deployed Render.com backend URL
+        const BACKEND_BASE_URL = 'http://localhost:3000';
+        const socket = io(BACKEND_BASE_URL); 
+
+        // --- Global State ---
+        let currentUser = null;
+        let currentChat = {
+            id: null,
+            type: null,
+            name: null,
+            avatar: null
+        };
+        let userProfileAvatarSrc = ''; 
+        let currentUsername = 'Anonymous'; 
+        const usersInChat = new Map(); 
+        let firebaseAuthReady = false; 
+        let socketAuthReady = false;
+        
+        // FIX: Add a flag AND a timestamp to prevent double-fetching
+        let isFetchingHistory = false; 
+        let lastFetchTime = 0;
+
+
+        // --- Initialization ---
+        lucide.createIcons();
+
+        // --- Custom Message Modal Functions ---
+        function showMessageModal(message) {
+            modalMessage.textContent = message;
+            customMessageModal.classList.add('show');
+        }
+
+        function hideMessageModal() {
+            customMessageModal.classList.remove('show');
+        }
+
+        closeModalBtn.addEventListener('click', hideMessageModal);
+        customMessageModal.addEventListener('click', (e) => {
+            if (e.target === customMessageModal) { 
+                hideMessageModal();
+            }
+        });
+
+        // --- UUID Polyfill for Insecure Contexts (Fixes crash on HTTP) ---
+        function generateUUID() {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            // Fallback for when crypto.randomUUID is not available (e.g. non-HTTPS)
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // --- Local Storage Helpers ---
+        function getStorageKey() {
+            if (!currentUser || !currentChat.id) return null;
+            // Key format: chat_history_USERID_CHATID
+            const chatId = currentChat.type === 'individual' 
+                ? currentChat.id.replace(currentUser.uid, '').replace('_', '') 
+                : currentChat.id;
+            return `chat_history_${currentUser.uid}_${chatId}`;
+        }
+
+        // --- CORE FUNCTION: Sanitize message list (Robust Deduplication) ---
+        function sanitizeMessages(messages) {
+            if (!Array.isArray(messages)) return [];
+            
+            const unique = [];
+            const seenIds = new Set();
+            const seenContent = new Map(); 
+
+            // Sort by timestamp
+            messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            for (const msg of messages) {
+                // 1. Preferred Check: Unique Message ID
+                if (msg.messageId) {
+                    if (!seenIds.has(msg.messageId)) {
+                        seenIds.add(msg.messageId);
+                        unique.push(msg);
+                    }
+                    continue; 
+                }
+
+                // 2. Fallback Check: Sender + Content + Fuzzy Time (for old/legacy messages)
+                const msgTime = new Date(msg.timestamp).getTime();
+                if (isNaN(msgTime) || !msg.senderId) continue; 
+
+                const content = msg.content || msg.encryptedContent || "[Empty]";
+                const signature = `${msg.senderId}|${content}`;
+                
+                let isDuplicate = false;
+                if (seenContent.has(signature)) {
+                    const lastTime = seenContent.get(signature);
+                    // If same content from same sender within 5 seconds
+                    if (Math.abs(msgTime - lastTime) < 5000) {
+                        isDuplicate = true;
+                    }
+                }
+                
+                if (!isDuplicate) {
+                    seenContent.set(signature, msgTime);
+                    unique.push(msg);
+                }
+            }
+            return unique;
+        }
+
+        function saveMessageToLocal(messageObj) {
+            const key = getStorageKey();
+            if (!key) return;
+
+            const existing = localStorage.getItem(key);
+            let messages = existing ? JSON.parse(existing) : [];
+            
+            messages.push(messageObj);
+            
+            // Sanitize immediately to prevent any temporary duplicates
+            const cleanMessages = sanitizeMessages(messages);
+            localStorage.setItem(key, JSON.stringify(cleanMessages));
+        }
+
+        // --- Function to attempt loading messages once everything is ready ---
+        function attemptLoadMessages() {
+            if (firebaseAuthReady && socketAuthReady && currentUser && currentChat.id && currentChat.type) {
+                loadChatMessages();
+                // For group chats, ensure the user joins the Socket.io room
+                if (currentChat.type === 'group') {
+                    socket.emit('join_group', { groupId: currentChat.id, userId: currentUser.uid });
+                }
+            } else {
+                // If data isn't ready, we check if local storage has something to show at least
+                const key = getStorageKey();
+                if (!key || !localStorage.getItem(key)) {
+                     // Only show spinner if we have absolutely nothing
+                     // AND we are not already trying to fetch
+                    if (!isFetchingHistory) {
+                        messageDisplay.innerHTML = `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--subtext-color);">
+                            <p>Connecting...</p>
+                            <div class="spinner" style="margin-top: 10px;"></div>
+                        </div>`;
+                    }
+                }
+            }
+        }
+
+
+        // --- Socket.io Event Handlers ---
+        socket.on('connect', () => {
+            console.log('Connected to chat server with ID:', socket.id);
+            if (currentUser) {
+                socket.emit('authenticate', { userId: currentUser.uid, username: currentUsername });
+            }
+            socketAuthReady = true; 
+            attemptLoadMessages(); 
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from chat server.');
+            socketAuthReady = false; 
+        });
+
+        socket.on('error', (message) => {
+            console.error('Server error:', message);
+            showMessageModal(`Server Error: ${message}`);
+        });
+
+        socket.on('user_status_update', async (data) => {
+            console.log(`${data.username} (${data.userId}) is now ${data.status}.`);
+            if (currentChat.type === 'individual' && currentChat.id.includes(data.userId)) {
+                chatHeaderStatus.textContent = data.status === 'online' ? 'Online' : 'Offline';
+            }
+            let avatarForStatusUpdate = data.avatar; 
+            if (!avatarForStatusUpdate) {
+                const userDocSnap = await getDoc(doc(db, "users", data.userId));
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    avatarForStatusUpdate = userData.photoURL || `https://placehold.co/40x40/4CAF50/ffffff?text=${(userData.name || data.userId).charAt(0).toUpperCase()}`;
+                } else {
+                    avatarForStatusUpdate = `https://placehold.co/40x40/D3D3D3/000000?text=NA`;
+                }
+            }
+            usersInChat.set(data.userId, { username: data.username, avatar: avatarForStatusUpdate });
+        });
+
+        // Listener for incoming E2EE private messages
+        socket.on('private_message', (data) => {
+            // FIX: Prevent double loading (ignore if the sender is me)
+            if (data.senderId === currentUser?.uid) {
+                return;
+            }
+
+            // Save to local storage
+            saveMessageToLocal({
+                senderId: data.senderId,
+                encryptedContent: data.encryptedContent,
+                timestamp: data.timestamp,
+                messageId: data.messageId // Save Server/Client ID
+            });
+
+            const decryptedMessage = decryptPrivateMessage(data.encryptedContent); 
+            // Avatar is managed by displayMessage logic now (removed from DOM)
+            displayMessage(data.senderId, decryptedMessage, data.timestamp, null, currentChat.name);
+        });
+
+        // Listener for incoming plain text group messages
+        socket.on('group_message', async (data) => {
+            if (data.senderId === currentUser?.uid) {
+                return;
+            }
+
+             saveMessageToLocal({
+                senderId: data.senderId,
+                content: data.content,
+                timestamp: data.timestamp,
+                messageId: data.messageId
+            });
+
+            let senderInfo = usersInChat.get(data.senderId);
+            if (!senderInfo) {
+                const userDocSnap = await getDoc(doc(db, "users", data.senderId));
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    senderInfo = { 
+                        username: userData.name || data.senderId, 
+                        avatar: userData.photoURL || `https://placehold.co/40x40/FF5733/ffffff?text=${(userData.name || data.senderId).charAt(0).toUpperCase()}`
+                    };
+                    usersInChat.set(data.senderId, senderInfo); 
+                } else {
+                    senderInfo = { 
+                        username: data.senderId, 
+                        avatar: `https://placehold.co/40x40/FF5733/ffffff?text=${data.senderId.charAt(0).toUpperCase()}` 
+                    };
+                }
+            }
+            displayMessage(data.senderId, data.content, data.timestamp, null, senderInfo.username);
+        });
+
+        // Reusable function to render a list of messages
+        async function renderChatHistory(messages) {
+             messageDisplay.innerHTML = ''; 
+             
+             // Double check: Sanitize input before rendering
+             const uniqueMessages = sanitizeMessages(messages);
+
+            const senderIds = new Set(uniqueMessages.map(msg => msg.senderId));
+            const usersToFetch = Array.from(senderIds).filter(id => !usersInChat.has(id));
+
+            if (usersToFetch.length > 0) {
+                const userPromises = usersToFetch.map(id => getDoc(doc(db, "users", id)));
+                const userSnaps = await Promise.all(userPromises);
+                userSnaps.forEach(userSnap => {
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        usersInChat.set(userSnap.id, {
+                            username: userData.name || userSnap.id,
+                            avatar: userData.photoURL || `https://placehold.co/40x40/4CAF50/ffffff?text=${(userData.name || userSnap.id).charAt(0).toUpperCase()}`
+                        });
+                    } else {
+                        usersInChat.set(userSnap.id, {
+                            username: userSnap.id,
+                            avatar: `https://placehold.co/40x40/D3D3D3/000000?text=NA` 
+                        });
+                    }
+                });
+            }
+
+            uniqueMessages.forEach(msg => {
+                const isCurrentUser = msg.senderId === currentUser.uid;
+                let senderName = isCurrentUser ? currentUsername : currentChat.name; 
+
+                if (currentChat.type === 'group') {
+                    const senderInfo = usersInChat.get(msg.senderId);
+                    if (senderInfo) {
+                        senderName = senderInfo.username;
+                    } else {
+                        senderName = msg.senderId;
+                    }
+                }
+
+                const displayedContent = currentChat.type === 'individual'
+                ? decryptPrivateMessage(msg.encryptedContent || msg.content)
+                : msg.content;
+
+                displayMessage(msg.senderId, displayedContent, msg.timestamp, null, senderName);
+            });
+            messageDisplay.scrollTop = messageDisplay.scrollHeight; 
+        }
+
+        socket.on('receive_chat_history', async (data) => {
+            isFetchingHistory = false; // Reset flag on response
+
+            if (data.chatId === (currentChat.type === 'individual' ? currentChat.id.replace(currentUser.uid, '').replace('_', '') : currentChat.id) && data.chatType === currentChat.type) {
+                
+                const key = getStorageKey();
+                if (key) {
+                    const cleanServerMessages = sanitizeMessages(data.messages);
+                    // MERGE STRATEGY: Combine Local and Server, then Sanitize
+                    const existingLocal = localStorage.getItem(key) ? JSON.parse(localStorage.getItem(key)) : [];
+                    const combined = [...existingLocal, ...cleanServerMessages];
+                    const finalUnique = sanitizeMessages(combined);
+                    
+                    localStorage.setItem(key, JSON.stringify(finalUnique));
+                    await renderChatHistory(finalUnique);
+                } else {
+                     await renderChatHistory(data.messages);
+                }
+            }
+        });
+        
+        socket.on('server_error', (err) => {
+            console.error('SERVER_ERROR event:', err);
+            showMessageModal(`Server problem: ${err.op || 'unknown'} — ${err.message || 'See console'}`);
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        currentChat.id = urlParams.get('chatId');
+        currentChat.type = urlParams.get('chatType');
+        currentChat.name = urlParams.get('chatName');
+        currentChat.avatar = urlParams.get('chatAvatar');
+
+        if (currentChat.id && currentChat.type && currentChat.name && currentChat.avatar) {
+            chatHeaderName.textContent = currentChat.name;
+            // Avatar display logic removed from header
+            chatHeaderStatus.textContent = currentChat.type === 'group' ? 'Group chat' : 'Online';
+        } else {
+            messageDisplay.innerHTML = `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #ef4444; text-align: center;">
+                <p>Error: Chat details missing. Please go back.</p>
+                <button id="error-back-btn" class="modal-btn" style="background-color: #ef4444; margin-top: 10px;">Go Back</button>
+            </div>`;
+            document.getElementById('error-back-btn').addEventListener('click', () => {
+                window.location.href = 'chat.html';
+            });
+            messageInput.disabled = true;
+            sendMessageBtn.disabled = true;
+        }
+
+
+        // --- Firebase Authentication ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                
+                const userDocRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(userDocRef);
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    userProfileAvatarSrc = userData.photoURL || `https://placehold.co/40x40/4CAF50/ffffff?text=${userData.name.charAt(0).toUpperCase()}`;
+                    currentUsername = userData.name || 'Anonymous';
+                    usersInChat.set(currentUser.uid, { username: currentUsername, avatar: userProfileAvatarSrc }); 
+                } else {
+                     userProfileAvatarSrc = `https://placehold.co/40x40/4CAF50/ffffff?text=${currentUser.uid.charAt(0).toUpperCase()}`;
+                     currentUsername = `User-${currentUser.uid.substring(0, 5)}`;
+                     usersInChat.set(currentUser.uid, { username: currentUsername, avatar: userProfileAvatarSrc });
+                }
+                
+                firebaseAuthReady = true; 
+                
+                // IMPORTANT: Logic cleanup. We authenticate socket if connected,
+                // BUT we don't call attemptLoadMessages() inside the 'socket.connected' block,
+                // because we call it at the end of this block anyway.
+                if (socket.connected) {
+                    socket.emit('authenticate', { userId: currentUser.uid, username: currentUsername });
+                    socketAuthReady = true; 
+                }
+
+                attemptLoadMessages(); 
+
+                updateMessageInputState(docSnap.exists() ? docSnap.data() : {});
+
+            } else {
+                window.location.href = "chat.html"; 
+            }
+        });
+
+        async function updateMessageInputState(userData) {
+            if (!currentUser || !currentChat.id || !currentChat.type) return;
+
+            const blockedUsers = userData.blockedUsers || [];
+            const blockedGroups = userData.blockedGroups || [];
+
+            let isBlocked = false;
+            let placeholderMessage = "Type a message...";
+
+            if (currentChat.type === 'individual') {
+                const friendId = currentChat.id.replace(currentUser.uid, '').replace('_', '');
+                if (blockedUsers.includes(friendId)) {
+                    isBlocked = true;
+                    placeholderMessage = "You blocked this user.";
+                }
+            } else if (currentChat.type === 'group') {
+                if (blockedGroups.includes(currentChat.id)) {
+                    isBlocked = true;
+                    placeholderMessage = "You blocked this group.";
+                } else {
+                    const groupDocSnap = await getDoc(doc(db, "groups", currentChat.id));
+                    if (groupDocSnap.exists() && !(groupDocSnap.data().members || []).includes(currentUser.uid)) {
+                        isBlocked = true;
+                        placeholderMessage = "You left this group.";
+                    }
+                }
+            }
+
+            messageInput.disabled = isBlocked;
+            sendMessageBtn.disabled = isBlocked;
+            messageInput.placeholder = placeholderMessage;
+        }
+
+
+        function displayMessage(senderId, content, timestamp, avatarSrc, senderName) {
+            const isSentByCurrentUser = senderId === currentUser.uid;
+            const messageTime = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const isFileMessage = /\[File:.+\]\(https?:\/\/.+\)/.test(content);
+            let displayedContent = content;
+
+            if (isFileMessage) {
+                const match = content.match(/\[File:([^\]]+)\]\(([^)]+)\)/);
+                if (match && match.length === 3) {
+                    const fileName = match[1];
+                    const fileUrl = match[2];
+                    const ext = fileName.split('.').pop().toLowerCase();
+
+                    if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+                        displayedContent = `
+                        <img src="${fileUrl}" 
+                            alt="${fileName}" 
+                            class="chat-image"
+                            onclick="openFileModal('image','${fileUrl}','${fileName}')">
+                        `;
+                    } else if (ext === "pdf") {
+                        displayedContent = `
+                        <div class="file-link" onclick="openFileModal('pdf','${fileUrl}','${fileName}')">
+                            <i data-lucide="file-text" width="16" height="16"></i> 
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${fileName}</span>
+                        </div>
+                        `;
+                    } else {
+                        displayedContent = `
+                        <div class="file-link" onclick="openFileModal('other','${fileUrl}','${fileName}')">
+                            <i data-lucide="paperclip" width="16" height="16"></i>
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${fileName}</span>
+                        </div>
+                        `;
+                    }
+                }
+            }
+            
+            // Logic change: Only show name if received. No avatars.
+            const messageHtml = `
+                <div class="message-row ${isSentByCurrentUser ? 'sent' : 'received'}">
+                    
+                    <div class="message-content-wrapper">
+                         ${!isSentByCurrentUser ? `<p class="sender-name">${senderName}</p>` : ''}
+                        
+                        <div class="message-bubble">
+                            <div>${displayedContent}</div>
+                        </div>
+                        <span class="message-time">${messageTime}</span>
+                    </div>
+                </div>
+            `;
+            const newMessageDiv = document.createElement('div');
+            newMessageDiv.innerHTML = messageHtml;
+            messageDisplay.appendChild(newMessageDiv.firstElementChild); 
+            messageDisplay.scrollTop = messageDisplay.scrollHeight;
+            lucide.createIcons(); 
+        }
+
+        function encryptPrivateMessage(plaintext) {
+            return `ENCRYPTED[${btoa(encodeURIComponent(plaintext))}]`; 
+        }
+
+        function decryptPrivateMessage(encryptedtext) {
+            if (encryptedtext && encryptedtext.startsWith('ENCRYPTED[') && encryptedtext.endsWith(']')) {
+                const encoded = encryptedtext.substring(10, encryptedtext.length - 1);
+                try {
+                    return decodeURIComponent(atob(encoded));
+                } catch (e) {
+                    return " (Undecryptable Content)"; 
+                }
+            }
+            return encryptedtext; 
+        }
+
+        function openFileModal(type, url, fileName) {
+            const modal = document.getElementById("fileModal");
+            const content = document.getElementById("fileModalContent");
+            const downloadBtn = document.getElementById("downloadBtn");
+
+            let innerHTML = "";
+            if (type === "image") {
+                innerHTML = `<img src="${url}" alt="${fileName}" style="max-height: 100%; max-width: 100%; object-fit: contain;">`;
+            } else if (type === "pdf") {
+                innerHTML = `<iframe src="${url}" style="width: 100%; height: 100%; border: none;"></iframe>`;
+            } else {
+                innerHTML = `
+                    <div style="text-align: center; color: white;">
+                        <i data-lucide="file" width="64" height="64" style="margin-bottom: 16px; color: white;"></i>
+                        <p style="font-weight: 500; word-break: break-all; color: white;">${fileName}</p>
+                    </div>`;
+            }
+
+            content.innerHTML = innerHTML;
+            downloadBtn.href = url;
+            downloadBtn.download = fileName; 
+
+            modal.style.display = "flex"; 
+            modal.classList.add('show');
+            lucide.createIcons();
+        }
+
+        function closeFileModal() {
+            const modal = document.getElementById("fileModal");
+            modal.style.display = "none";
+            modal.classList.remove('show');
+            document.getElementById("fileModalContent").innerHTML = ""; 
+        }
+
+        window.openFileModal = openFileModal;
+        window.closeFileModal = closeFileModal;
+
+        async function uploadFileToBackblaze(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${BACKEND_BASE_URL}/api/upload-file`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'x-bucket-name': 'yushi-chat-uploads-aisahil' 
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to upload file.');
+                }
+
+                if (result.fileUrl || result.downloadUrl) {
+                    return result.fileUrl || result.downloadUrl;
+                } else {
+                    throw new Error('No file URL returned from backend.');
+                }
+            } catch (error) {
+                console.error('File upload failed:', error);
+                showMessageModal(`File upload failed: ${error.message}`);
+                return null;
+            }
+        }
+
+        sendMessageBtn.addEventListener('click', () => {
+            if (messageInput.disabled) return;
+            const messageText = messageInput.value.trim();
+            if (messageText && currentChat.id && currentUser) {
+                const timestamp = new Date().toISOString(); 
+                
+                // NEW: Use Fallback Generator if crypto.randomUUID fails
+                const messageId = generateUUID();
+
+                if (currentChat.type === 'individual') {
+                    const encryptedContent = encryptPrivateMessage(messageText);
+                    
+                    saveMessageToLocal({
+                        senderId: currentUser.uid,
+                        encryptedContent: encryptedContent,
+                        timestamp: timestamp,
+                        messageId: messageId
+                    });
+
+                    socket.emit('private_message', {
+                        senderId: currentUser.uid,
+                        receiverId: currentChat.id.replace(currentUser.uid, '').replace('_', ''), 
+                        encryptedContent: encryptedContent,
+                        timestamp: timestamp, // Send Timestamp
+                        messageId: messageId  // Send ID
+                    });
+                    displayMessage(currentUser.uid, messageText, timestamp, null, currentUsername); 
+
+                } else if (currentChat.type === 'group') {
+                    
+                    saveMessageToLocal({
+                        senderId: currentUser.uid,
+                        content: messageText,
+                        timestamp: timestamp,
+                        messageId: messageId
+                    });
+
+                    socket.emit('group_message', {
+                        groupId: currentChat.id,
+                        senderId: currentUser.uid,
+                        content: messageText,
+                        timestamp: timestamp, // Send Timestamp
+                        messageId: messageId  // Send ID
+                    });
+                    displayMessage(currentUser.uid, messageText, timestamp, null, currentUsername);
+                }
+                
+                messageInput.value = ''; 
+            }
+        });
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !messageInput.disabled) { 
+                sendMessageBtn.click();
+            }
+        });
+
+        backBtn.addEventListener('click', () => {
+            window.location.href = 'chat.html'; 
+        });
+        
+    </script>
+</body>
+</html>
