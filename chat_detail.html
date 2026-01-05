@@ -139,9 +139,6 @@
 
         .back-btn:active { transform: scale(0.95); }
 
-        /* Avatar removed, we keep this empty or remove if not needed, 
-           but structure kept for flex alignment */
-        
         .header-info {
             min-width: 0;
             display: flex;
@@ -488,7 +485,6 @@
                 <button id="back-btn" class="back-btn" title="Back">
                     <i data-lucide="arrow-left" width="24" height="24"></i>
                 </button>
-                <!-- Avatar Removed per request -->
                 <div class="header-info">
                     <h2 id="chat-header-name" class="header-title">Loading...</h2>
                     <p id="chat-header-status" class="header-status"></p>
@@ -573,8 +569,18 @@
             serverTimestamp,
             deleteDoc 
         } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-        import { firebaseConfig } from './firebase-config.js';
 
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyADtCEmADN8ueIwBb91mohYv5eiL9plgz0",
+            authDomain: "yushi-login.firebaseapp.com",
+            projectId: "yushi-login",
+            storageBucket: "yushi-login.appspot.com",
+            messagingSenderId: "75893637403",
+            appId: "1:75893637403:web:9f8fd7954714ecf01f13be",
+            measurementId: "G-58ZDG54Z4P"
+        };
+        
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -583,7 +589,6 @@
         // --- DOM Elements ---
         const backBtn = document.getElementById('back-btn');
         const chatHeaderName = document.getElementById('chat-header-name');
-        // const chatHeaderAvatar = document.getElementById('chat-header-avatar'); // Removed
         const chatHeaderStatus = document.getElementById('chat-header-status');
         const messageDisplay = document.getElementById('message-display');
         const messageInput = document.getElementById('message-input');
@@ -728,6 +733,56 @@
             // Sanitize immediately to prevent any temporary duplicates
             const cleanMessages = sanitizeMessages(messages);
             localStorage.setItem(key, JSON.stringify(cleanMessages));
+        }
+
+        // --- ADDED MISSING FUNCTION: loadChatMessages ---
+        function loadChatMessages() {
+            if (!currentUser || !currentChat.id || !currentChat.type) {
+                console.warn('Cannot load messages: Missing user or chat data');
+                return;
+            }
+
+            // FIX: Prevent duplicate requests
+            const now = Date.now();
+            if (isFetchingHistory || (now - lastFetchTime < 2000)) {
+                console.log('⚠️ Skipping duplicate loadChatMessages call');
+                return;
+            }
+            
+            isFetchingHistory = true;
+            lastFetchTime = now;
+
+            // First, try to load from local storage immediately
+            const key = getStorageKey();
+            if (key) {
+                const stored = localStorage.getItem(key);
+                if (stored) {
+                    try {
+                        const messages = JSON.parse(stored);
+                        // Sanitize before rendering
+                        const cleanMessages = sanitizeMessages(messages);
+                        if (cleanMessages.length > 0) {
+                            renderChatHistory(cleanMessages);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing local messages:', e);
+                    }
+                }
+            }
+
+            // Then request from server
+            const chatIdForServer = currentChat.type === 'individual'
+                ? currentChat.id.replace(currentUser.uid, '').replace('_', '')
+                : currentChat.id;
+
+            socket.emit('request_chat_history', {
+                chatId: chatIdForServer,
+                chatType: currentChat.type,
+                userId: currentUser.uid
+            });
+            
+            // Safety valve timeout
+            setTimeout(() => { isFetchingHistory = false; }, 10000);
         }
 
         // --- Function to attempt loading messages once everything is ready ---
