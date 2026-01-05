@@ -78,17 +78,10 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { firebaseConfig as localConfig } from './firebase-config.js';
 
         // Global variables for Firebase (provided by the Canvas environment)
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyADtCEmADN8ueIwBb91mohYv5eiL9plgz0",
-            authDomain: "yushi-login.firebaseapp.com",
-            projectId: "yushi-login",
-            storageBucket: "yushi-login.firebasestorage.app",
-            messagingSenderId: "75893637403",
-            appId: "1:75893637403:web:9f8fd7954714ecf01f13be",
-            measurementId: "G-58ZDG54Z4P"
-        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : localConfig;
 
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 

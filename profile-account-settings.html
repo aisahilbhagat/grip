@@ -351,16 +351,9 @@
         import { getAuth, onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
         import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+        import { firebaseConfig } from './firebase-config.js';
 
         // --- Firebase Initialization (Auth & Firestore only) ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyADtCEmADN8ueIwBb91mohYv5eiL9plgz0",
-            authDomain: "yushi-login.firebaseapp.com",
-            projectId: "yushi-login",
-            messagingSenderId: "75893637403",
-            appId: "1:75893637403:web:9f8fd7954714ecf01f13be",
-            measurementId: "G-58ZDG54Z4P"
-        };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);

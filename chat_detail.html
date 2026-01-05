@@ -573,18 +573,8 @@
             serverTimestamp,
             deleteDoc 
         } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+        import { firebaseConfig } from './firebase-config.js';
 
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyADtCEmADN8ueIwBb91mohYv5eiL9plgz0",
-            authDomain: "yushi-login.firebaseapp.com",
-            projectId: "yushi-login",
-            storageBucket: "yushi-login.appspot.com",
-            messagingSenderId: "75893637403",
-            appId: "1:75893637403:web:9f8fd7954714ecf01f13be",
-            measurementId: "G-58ZDG54Z4P"
-        };
-        
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
